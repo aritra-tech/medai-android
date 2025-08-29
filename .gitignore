@@ -7,6 +7,9 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/compiler.xml
+/.idea/deviceManager.xml
+/.idea/ChatHistory_schema_v2.xml
 .DS_Store
 /build
 /captures
@@ -14,3 +17,15 @@
 .cxx
 local.properties
 google-services.json
+
+# Build artifacts
+*.apk
+*.aab
+/app/release/
+/app/debug/
+
+# Kotlin compiler cache
+/.kotlin/
+
+# Temporary files
+Untitled
