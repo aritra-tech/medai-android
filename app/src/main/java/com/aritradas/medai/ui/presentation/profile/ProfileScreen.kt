@@ -52,6 +52,7 @@ import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
 import com.aritradas.medai.utils.Constants
+import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,6 +69,7 @@ fun ProfileScreen(
     val activity = LocalActivity.current
     val context = LocalContext.current
     val userData by viewModel.userData.collectAsState()
+    val featureRequestState by viewModel.featureRequestState.collectAsState()
     var backPressedState by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState()
@@ -82,6 +84,26 @@ fun ProfileScreen(
         }
     }
 
+    LaunchedEffect(featureRequestState) {
+        val currentState = featureRequestState
+        when (currentState) {
+            is Resource.Success -> {
+                Toast.makeText(context, currentState.data, Toast.LENGTH_LONG).show()
+                showBottomSheet = false
+                featureName = ""
+                featureEmail = ""
+                featureDetail = ""
+                viewModel.clearFeatureRequestState()
+            }
+            is Resource.Error -> {
+                Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
+                viewModel.clearFeatureRequestState()
+            }
+            else -> { /* Loading state handled in UI */
+            }
+        }
+    }
+
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -89,6 +111,7 @@ fun ProfileScreen(
                 featureName = ""
                 featureEmail = ""
                 featureDetail = ""
+                viewModel.clearFeatureRequestState()
             },
             sheetState = bottomSheetState
         ) {
@@ -105,12 +128,15 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                val isLoading = featureRequestState is Resource.Loading
+
                 OutlinedTextField(
                     value = featureName,
                     onValueChange = { featureName = it },
                     label = { Text("Name") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -120,7 +146,8 @@ fun ProfileScreen(
                     onValueChange = { featureEmail = it },
                     label = { Text("Email") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -129,30 +156,32 @@ fun ProfileScreen(
                     value = featureDetail,
                     onValueChange = { featureDetail = it },
                     label = { Text("Describe your feature/request") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = {
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:medai.summarizer@gmail.com")
-                        putExtra(
-                            Intent.EXTRA_SUBJECT,
-                            "Feature Request - MedAI"
-                        )
-                        putExtra(
-                            Intent.EXTRA_TEXT,
-                            "Name: $featureName\nEmail: $featureEmail\nFeature Request:\n$featureDetail"
-                        )
+                Button(
+                    onClick = {
+                        if (featureName.isBlank() || featureDetail.isBlank()) {
+                            Toast.makeText(
+                                context,
+                                "Please fill in all required fields",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+                        viewModel.submitFeatureRequest(featureName, featureEmail, featureDetail)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
+                ) {
+                    val currentState = featureRequestState
+                    when (currentState) {
+                        is Resource.Loading -> Text("Submitting...")
+                        else -> Text("Submit")
                     }
-                    context.startActivity(intent)
-                    showBottomSheet = false
-                    featureName = ""
-                    featureEmail = ""
-                    featureDetail = ""
-                }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Submit")
                 }
             }
         }

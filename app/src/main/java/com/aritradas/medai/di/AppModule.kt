@@ -8,13 +8,17 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.aritradas.medai.R
 import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.data.repository.AuthRepositoryImpl
+import com.aritradas.medai.data.repository.FeatureRequestRepositoryImpl
 import com.aritradas.medai.data.repository.MedicalReportRepositoryImpl
 import com.aritradas.medai.data.repository.MedicineDetailsRepositoryImpl
 import com.aritradas.medai.data.repository.PrescriptionRepositoryImpl
 import com.aritradas.medai.domain.repository.AuthRepository
+import com.aritradas.medai.domain.repository.FeatureRequestRepository
 import com.aritradas.medai.domain.repository.MedicalReportRepository
 import com.aritradas.medai.domain.repository.MedicineDetailsRepository
 import com.aritradas.medai.domain.repository.PrescriptionRepository
+import com.aritradas.medai.network.GoogleSheetsService
+import com.aritradas.medai.network.RetrofitClient
 import com.aritradas.medai.utils.AppBioMetricManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -74,6 +78,16 @@ object AppModule {
     fun provideMedicalReportRepository(
         medicalReportRepositoryImpl: MedicalReportRepositoryImpl
     ): MedicalReportRepository = medicalReportRepositoryImpl
+
+    @Provides
+    @Singleton
+    fun provideGoogleSheetsService(): GoogleSheetsService = RetrofitClient.googleSheetsService
+
+    @Provides
+    @Singleton
+    fun provideFeatureRequestRepository(
+        googleSheetsService: GoogleSheetsService
+    ): FeatureRequestRepository = FeatureRequestRepositoryImpl(googleSheetsService)
 
     @Provides
     fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil =
