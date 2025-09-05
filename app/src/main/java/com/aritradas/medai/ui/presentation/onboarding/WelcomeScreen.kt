@@ -111,8 +111,7 @@ fun WelcomeScreen(
                     context.getString(R.string.login_successful),
                     Toast.LENGTH_SHORT
                 ).show()
-                // Replace with whatever post-login navigation is necessary:
-                navController.navigate(Screens.SignUp) {
+                navController.navigate(Screens.Prescription) {
                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                 }
             }

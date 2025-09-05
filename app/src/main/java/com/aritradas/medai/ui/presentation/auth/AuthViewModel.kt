@@ -163,6 +163,26 @@ class AuthViewModel @Inject constructor(
         isLoading.postValue(true)
         viewModelScope.launch {
             val result = authRepository.signInWithGoogle(idToken)
+            if (result is Resource.Success) {
+                val firebaseUser = Firebase.auth.currentUser
+                firebaseUser?.let { user ->
+                    val userProfile = User(
+                        name = user.displayName ?: "",
+                        email = user.email ?: ""
+                    )
+                    val userDB = FirebaseFirestore.getInstance()
+                    userDB.collection("users")
+                        .document(user.uid)
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (!document.exists()) {
+                                userDB.collection("users")
+                                    .document(user.uid)
+                                    .set(userProfile)
+                            }
+                        }
+                }
+            }
             isLoading.postValue(false)
             googleSignInResult.postValue(
                 when (result) {
