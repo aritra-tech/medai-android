@@ -8,17 +8,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Brightness6
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.outlined.AutoDelete
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
@@ -39,11 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.aritradas.medai.MainActivity
 import com.aritradas.medai.R
-import com.aritradas.medai.domain.model.ThemePreference
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
 import com.aritradas.medai.ui.presentation.settings.component.SwitchCard
@@ -198,19 +191,13 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            ListItem(
-                colors = ListItemDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                supportingContent = {
-                    ThemeModeButtonGroup(
-                        currentTheme = uiState.currentTheme,
-                        onThemeSelected = {
-                            settingsViewModel.onThemeChanged(it)
-                        },
-                    )
+            ThemeModeButtonGroup(
+                currentTheme = uiState.currentTheme,
+                onThemeSelected = {
+                    settingsViewModel.onThemeChanged(it)
                 },
-                headlineContent = { Text("Theme") }
+                isFirstItem = true,
+                isLastItem = true
             )
 
             Spacer(modifier = Modifier.height(10.dp))
