@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import com.aritradas.medai.MainActivity
 import com.aritradas.medai.domain.repository.BiometricAuthListener
 import dagger.hilt.android.qualifiers.ApplicationContext
