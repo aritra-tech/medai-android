@@ -170,7 +170,7 @@ fun WelcomeScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             FilledTonalButton(
                 onClick = {
@@ -183,32 +183,6 @@ fun WelcomeScreen(
             ) {
                 Text(
                     text = stringResource(R.string.get_started),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            FilledTonalButton(
-                onClick = {
-                    // Google Sign-In
-                    val gso = GoogleSignInOptions.Builder(
-                        GoogleSignInOptions.DEFAULT_SIGN_IN
-                    )
-                        .requestIdToken(context.getString(R.string.web_client_id))
-                        .requestEmail()
-                        .build()
-                    val googleSignInClient =
-                        GoogleSignIn.getClient(context, gso)
-                    launcher.launch(googleSignInClient.signInIntent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(
-                    text = stringResource(R.string.sign_in_with_google),
                     style = MaterialTheme.typography.titleMedium
                 )
             }

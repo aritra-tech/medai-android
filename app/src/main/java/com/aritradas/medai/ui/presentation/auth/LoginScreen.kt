@@ -14,10 +14,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -162,10 +162,10 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 20.dp)
                 .padding(innerPadding)
-                .windowInsetsPadding(WindowInsets.ime)
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 20.dp),
+                .imePadding(),
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.Top
         ) {
@@ -178,10 +178,9 @@ fun LoginScreen(
                 },
                 label = { Text("Email") },
                 placeholder = { Text("Enter your email") },
-                keyboardOptions = KeyboardOptions(
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false,
                     keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                    autoCorrect = false
+                    imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
                     onNext = {
@@ -199,7 +198,8 @@ fun LoginScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                }
+                },
+                shape = MaterialTheme.shapes.medium
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -252,7 +252,8 @@ fun LoginScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                }
+                },
+                shape = MaterialTheme.shapes.medium
             )
 
             AnimatedVisibility(!isKeyboardVisible) {
