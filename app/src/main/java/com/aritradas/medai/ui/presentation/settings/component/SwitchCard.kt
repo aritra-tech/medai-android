@@ -63,6 +63,7 @@ fun SwitchCard(
         ) {
             Text(
                 text = itemName,
+                style = MaterialTheme.typography.titleMedium
             )
 
             if (!itemSubText.isNullOrBlank()) {
@@ -70,6 +71,8 @@ fun SwitchCard(
 
                 Text(
                     text = itemSubText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
