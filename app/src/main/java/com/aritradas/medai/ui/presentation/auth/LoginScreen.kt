@@ -14,10 +14,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -81,7 +81,8 @@ fun LoginScreen(
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val isSignInButtonEnable by remember { derivedStateOf { validateEmail(email) } }
+    var emailTouched by remember { mutableStateOf(false) }
+    var passwordTouched by remember { mutableStateOf(false) }
 
     val errorLiveData by authViewModel.errorLiveData.observeAsState()
     val loginSuccess by authViewModel.loginSuccess.observeAsState()
@@ -94,6 +95,24 @@ fun LoginScreen(
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
     val isKeyboardVisible = imeInsets.getBottom(density) > 0
+
+    val emailError: String? = when {
+        !emailTouched -> null
+        email.isEmpty() -> "Email is required."
+        !validateEmail(email) -> "Please enter a valid email address."
+        else -> null
+    }
+    val passwordError: String? = when {
+        !passwordTouched -> null
+        password.isEmpty() -> "Password is required."
+        else -> null
+    }
+
+    val isSignInButtonEnable by remember {
+        derivedStateOf {
+            validateEmail(email) && password.isNotEmpty() && !isLoading
+        }
+    }
 
     LaunchedEffect(errorLiveData) {
         errorLiveData?.let { error ->
@@ -143,23 +162,25 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 20.dp)
                 .padding(innerPadding)
-                .windowInsetsPadding(WindowInsets.ime)
                 .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 20.dp),
+                .imePadding(),
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.Top
         ) {
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    if (!emailTouched) emailTouched = true
+                },
                 label = { Text("Email") },
                 placeholder = { Text("Enter your email") },
-                keyboardOptions = KeyboardOptions(
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false,
                     keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                    autoCorrect = false
+                    imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
                     onNext = {
@@ -169,17 +190,26 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
-                isError = email.isNotEmpty() && !validateEmail(email),
-                supportingText = if (email.isNotEmpty() && !validateEmail(email)) {
-                    { Text("Please enter a valid email address") }
-                } else null
+                isError = emailError != null,
+                supportingText = emailError?.let {
+                    {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                shape = MaterialTheme.shapes.medium
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    if (!passwordTouched) passwordTouched = true
+                },
                 label = { Text("Password") },
                 placeholder = { Text("Enter your password") },
                 trailingIcon = {
@@ -203,7 +233,8 @@ fun LoginScreen(
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
-                        if (!isLoading) {
+                        passwordTouched = true
+                        if (isSignInButtonEnable) {
                             focusManager.clearFocus()
                             keyboardController?.hide()
                             authViewModel.logIn(email, password)
@@ -212,7 +243,17 @@ fun LoginScreen(
                 ),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
+                enabled = !isLoading,
+                isError = passwordError != null,
+                supportingText = passwordError?.let {
+                    {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                shape = MaterialTheme.shapes.medium
             )
 
             AnimatedVisibility(!isKeyboardVisible) {
@@ -230,14 +271,18 @@ fun LoginScreen(
 
             Button(
                 onClick = {
+                    emailTouched = true
+                    passwordTouched = true
                     focusManager.clearFocus()
-                    authViewModel.logIn(email, password)
+                    if (isSignInButtonEnable) {
+                        authViewModel.logIn(email, password)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = MaterialTheme.shapes.extraLarge,
-                enabled = isSignInButtonEnable && !isLoading
+                enabled = isSignInButtonEnable
             ) {
                 if (isLoading) {
                     LoadingIndicator(
