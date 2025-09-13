@@ -9,7 +9,6 @@ import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.domain.repository.AuthRepository
 import com.aritradas.medai.domain.repository.BiometricAuthListener
 import com.aritradas.medai.utils.AppBioMetricManager
-import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.runIO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,15 +34,17 @@ class SettingsViewModel @Inject constructor(
     val onLogOutComplete = MutableLiveData<Boolean>()
 
     val onDeleteAccountComplete = MutableLiveData<Boolean>()
-    private val _biometricAuthState = MutableStateFlow(false)
-    val biometricAuthState: StateFlow<Boolean> = _biometricAuthState
+    private val _uiState = MutableStateFlow(SettingsUiState())
+    val uiState: StateFlow<SettingsUiState> = _uiState
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
             dataStore.data.map { preferences ->
-                preferences[DataStoreUtil.IS_BIOMETRIC_AUTH_SET_KEY] ?: false
+                SettingsUiState(
+                    biometricAuthEnabled = preferences[DataStoreUtil.IS_BIOMETRIC_AUTH_SET_KEY] ?: false
+                )
             }.collect {
-                _biometricAuthState.value = it
+                _uiState.value = it
             }
         }
     }
@@ -56,7 +57,7 @@ class SettingsViewModel @Inject constructor(
                     viewModelScope.launch {
                         dataStore.edit { preferences ->
                             preferences[DataStoreUtil.IS_BIOMETRIC_AUTH_SET_KEY] =
-                                !_biometricAuthState.value
+                                !_uiState.value.biometricAuthEnabled
                         }
                     }
                 }

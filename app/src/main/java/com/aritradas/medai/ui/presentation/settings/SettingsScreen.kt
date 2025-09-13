@@ -53,7 +53,7 @@ fun SettingsScreen(
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val onLogOutComplete by settingsViewModel.onLogOutComplete.observeAsState(false)
     val onDeleteAccountComplete by settingsViewModel.onDeleteAccountComplete.observeAsState(false)
-    val biometricAuthState by settingsViewModel.biometricAuthState.collectAsState()
+    val uiState by settingsViewModel.uiState.collectAsState()
     var openLogoutDialog by remember { mutableStateOf(false) }
     var openDeleteAccountDialog by remember { mutableStateOf(false) }
 
@@ -194,7 +194,7 @@ fun SettingsScreen(
                 isFirstItem = true,
                 itemName = stringResource(R.string.biometric_unlock),
                 itemSubText = stringResource(R.string.use_biometric_to_unlock_the_app),
-                isChecked = biometricAuthState,
+                isChecked = uiState.biometricAuthEnabled,
                 onChecked = {
                     settingsViewModel.showBiometricPrompt(context as MainActivity)
                 }
