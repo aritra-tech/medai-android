@@ -6,9 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aritradas.medai.MainActivity
 import com.aritradas.medai.data.datastore.DataStoreUtil
+import com.aritradas.medai.domain.model.ThemePreference
 import com.aritradas.medai.domain.repository.AuthRepository
 import com.aritradas.medai.domain.repository.BiometricAuthListener
+import com.aritradas.medai.domain.repository.ThemeRepository
 import com.aritradas.medai.utils.AppBioMetricManager
+import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.runIO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -16,7 +19,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +29,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val appBioMetricManager: AppBioMetricManager,
     private val authRepository: AuthRepository,
+    private val themeRepository: ThemeRepository,
     dataStoreUtil: DataStoreUtil
 ): ViewModel() {
 
@@ -47,8 +53,26 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = it
             }
         }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            getTheme()
+        }
     }
 
+    fun getTheme() = runIO {
+        themeRepository.getTheme().collectLatest { theme ->
+            _uiState.update { it.copy(currentTheme = theme) }
+        }
+    }
+
+    fun onThemeChanged(theme: ThemePreference) = runIO {
+        when(themeRepository.setTheme(theme)) {
+            is Resource.Success -> {
+                _uiState.update { it.copy(currentTheme = theme) }
+            }
+            else -> {}
+        }
+    }
     fun showBiometricPrompt(activity: MainActivity) {
         appBioMetricManager.initBiometricPrompt(
             activity = activity,
