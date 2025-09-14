@@ -26,9 +26,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Add BuildConfig field for Gemini API key
         buildConfigField("String", "GEMINI_API_KEY", "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\"")
         buildConfigField("String", "API_KEY", "\"${project.findProperty("API_KEY") ?: ""}\"")
+        buildConfigField("String", "MIXPANEL_PROJECT_TOKEN", "\"${project.findProperty("MIXPANEL_PROJECT_TOKEN") ?: ""}\"")
     }
 
     buildTypes {
@@ -135,6 +135,8 @@ dependencies {
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
     implementation (libs.androidx.lifecycle.livedata.ktx)
 
+    //MixPanel
+    implementation(libs.mixpanel.android)
 
     //Test
     testImplementation(libs.junit)

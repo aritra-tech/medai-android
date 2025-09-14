@@ -58,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
+import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.validateEmail
 import com.aritradas.medai.utils.UtilsKt.validateName
 import com.aritradas.medai.utils.UtilsKt.validatePassword
@@ -317,6 +318,7 @@ fun SignUpScreen(
                             }
                         )
                     }
+                    MixpanelManager.trackSignupCompleted()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

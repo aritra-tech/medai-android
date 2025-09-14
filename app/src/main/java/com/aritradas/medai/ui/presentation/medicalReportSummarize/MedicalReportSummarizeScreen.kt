@@ -79,6 +79,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.DrugDetailSheetContent
+import com.aritradas.medai.utils.MixpanelManager
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -167,7 +168,7 @@ fun MedicalReportSummarizeScreen(
         imageUri?.let { uri ->
             reportViewModel.validateAndAnalyzeReport(uri)
         }
-        Unit
+        MixpanelManager.trackMedicalReportSummarization()
     }
     reportViewModel.setOnSaveSuccessCallback {
         navController.popBackStack()
