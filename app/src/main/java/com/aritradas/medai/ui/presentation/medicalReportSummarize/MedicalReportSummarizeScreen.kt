@@ -276,7 +276,10 @@ fun MedicalReportSummarizeScreen(
                 actions = {
                     uiState.summary?.let {
                         IconButton(
-                            onClick = { reportViewModel.saveMedicalReport() },
+                            onClick = {
+                                reportViewModel.saveMedicalReport()
+                                MixpanelManager.savedMedicalReport()
+                            },
                             enabled = !uiState.isSaving
                         ) {
                             if (uiState.isSaving) {

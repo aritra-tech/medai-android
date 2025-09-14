@@ -283,10 +283,12 @@ fun PrescriptionSummarizeScreen(
                     }
                 },
                 actions = {
-                    // Show save button only when summary is available
                     uiState.summary?.let {
                         IconButton(
-                            onClick = { prescriptionViewModel.savePrescription() },
+                            onClick = {
+                                prescriptionViewModel.savePrescription()
+                                MixpanelManager.savedPrescription()
+                            },
                             enabled = !uiState.isSaving
                         ) {
                             if (uiState.isSaving) {
@@ -549,6 +551,7 @@ fun PrescriptionSummarizeScreen(
                                             medication.name
                                         )
                                         showDrugDetailModal = true
+                                        MixpanelManager.trackMedicineDetails()
                                     }
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))

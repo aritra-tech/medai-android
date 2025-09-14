@@ -26,4 +26,16 @@ object MixpanelManager {
     fun trackMedicalReportSummarization() {
         mixpanel?.track("medical_report_summarization")
     }
+
+    fun trackMedicineDetails() {
+        mixpanel?.track("medicine_details")
+    }
+
+    fun savedPrescription() {
+        mixpanel?.track("saved_prescription")
+    }
+
+    fun savedMedicalReport() {
+        mixpanel?.track("saved_medical_report")
+    }
 }
