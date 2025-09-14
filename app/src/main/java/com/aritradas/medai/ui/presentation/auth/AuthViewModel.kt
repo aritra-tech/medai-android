@@ -2,7 +2,10 @@ package com.aritradas.medai.ui.presentation.auth
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.aritradas.medai.domain.model.User
+import com.aritradas.medai.domain.repository.AuthRepository
+import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.validateEmail
 import com.aritradas.medai.utils.runIO
 import com.google.firebase.auth.FirebaseAuth
@@ -10,10 +13,16 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val auth = Firebase.auth
     val resetPassword = MutableLiveData<Boolean>()
@@ -21,6 +30,7 @@ class AuthViewModel : ViewModel() {
     val registerStatus = MutableLiveData<Boolean>()
     val loginSuccess = MutableLiveData<Boolean>()
     val isLoading = MutableLiveData<Boolean>() // Add loading state
+    val googleSignInResult = MutableLiveData<Resource<Boolean>>()
 
     fun resetPassword(email: String) = runIO {
         val trimmedEmail = email.trim()
@@ -147,5 +157,40 @@ class AuthViewModel : ViewModel() {
                     errorLiveData.postValue("Sign up failed: $errorMessage")
                 }
             }
+    }
+
+    fun signInWithGoogle(idToken: String) {
+        isLoading.postValue(true)
+        viewModelScope.launch {
+            val result = authRepository.signInWithGoogle(idToken)
+            if (result is Resource.Success) {
+                val firebaseUser = Firebase.auth.currentUser
+                firebaseUser?.let { user ->
+                    val userProfile = User(
+                        name = user.displayName ?: "",
+                        email = user.email ?: ""
+                    )
+                    val userDB = FirebaseFirestore.getInstance()
+                    userDB.collection("users")
+                        .document(user.uid)
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (!document.exists()) {
+                                userDB.collection("users")
+                                    .document(user.uid)
+                                    .set(userProfile)
+                            }
+                        }
+                }
+            }
+            isLoading.postValue(false)
+            googleSignInResult.postValue(
+                when (result) {
+                    is Resource.Success -> Resource.Success(true)
+                    is Resource.Error -> Resource.Error(result.message ?: "Google Sign-In failed.")
+                    else -> Resource.Error("Unknown error occurred.")
+                }
+            )
+        }
     }
 }
