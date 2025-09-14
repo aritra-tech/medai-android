@@ -176,8 +176,9 @@ fun PrescriptionSummarizeScreen(
     val handleSummarize = {
         imageUri?.let { uri ->
             prescriptionViewModel.validateAndAnalyzePrescription(uri)
+            MixpanelManager.trackPrescriptionSummarization()
         }
-        MixpanelManager.trackPrescriptionSummarization()
+        Unit
     }
     prescriptionViewModel.setOnSaveSuccessCallback {
         navController.popBackStack()

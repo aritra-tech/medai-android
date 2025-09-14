@@ -167,8 +167,9 @@ fun MedicalReportSummarizeScreen(
     val handleSummarize = {
         imageUri?.let { uri ->
             reportViewModel.validateAndAnalyzeReport(uri)
+            MixpanelManager.trackMedicalReportSummarization()
         }
-        MixpanelManager.trackMedicalReportSummarization()
+        Unit
     }
     reportViewModel.setOnSaveSuccessCallback {
         navController.popBackStack()

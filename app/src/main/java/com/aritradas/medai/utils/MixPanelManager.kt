@@ -2,15 +2,16 @@ package com.aritradas.medai.utils
 
 import android.content.Context
 import com.mixpanel.android.mpmetrics.MixpanelAPI
-import org.json.JSONObject
 
 object MixpanelManager {
 
     private var mixpanel: MixpanelAPI? = null
 
     fun init(context: Context, token: String) {
-        if (mixpanel == null) {
-            mixpanel = MixpanelAPI.getInstance(context, token, false)
+        synchronized(this) {
+            if (mixpanel == null) {
+                mixpanel = MixpanelAPI.getInstance(context, token, false)
+            }
         }
     }
 
