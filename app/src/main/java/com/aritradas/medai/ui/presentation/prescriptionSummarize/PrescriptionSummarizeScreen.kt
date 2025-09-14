@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -89,6 +90,7 @@ import com.aritradas.medai.R
 import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.Medication
 import com.aritradas.medai.utils.MixpanelManager
+import com.aritradas.medai.utils.UtilsKt.formatSummaryForSharing
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -283,6 +285,29 @@ fun PrescriptionSummarizeScreen(
                     }
                 },
                 actions = {
+                    uiState.summary?.let {
+                        IconButton(
+                            onClick = {
+                                val shareText = formatSummaryForSharing(it)
+                                val shareIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                    putExtra(Intent.EXTRA_SUBJECT, "Prescription Summary")
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(shareIntent, "Share Prescription Summary")
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share prescription summary",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
                     uiState.summary?.let {
                         IconButton(
                             onClick = {
