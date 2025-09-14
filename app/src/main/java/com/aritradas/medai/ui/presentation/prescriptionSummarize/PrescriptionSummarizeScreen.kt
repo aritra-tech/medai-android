@@ -88,6 +88,7 @@ import coil.compose.AsyncImage
 import com.aritradas.medai.R
 import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.Medication
+import com.aritradas.medai.utils.MixpanelManager
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -175,6 +176,7 @@ fun PrescriptionSummarizeScreen(
     val handleSummarize = {
         imageUri?.let { uri ->
             prescriptionViewModel.validateAndAnalyzePrescription(uri)
+            MixpanelManager.trackPrescriptionSummarization()
         }
         Unit
     }

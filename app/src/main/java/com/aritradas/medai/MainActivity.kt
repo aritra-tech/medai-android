@@ -3,7 +3,6 @@ package com.aritradas.medai
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -32,10 +31,10 @@ import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import javax.inject.Inject
+
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
