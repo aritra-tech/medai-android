@@ -28,6 +28,16 @@ android {
 
         buildConfigField("String", "GEMINI_API_KEY", "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\"")
         buildConfigField("String", "API_KEY", "\"${project.findProperty("API_KEY") ?: ""}\"")
+        buildConfigField(
+            "String",
+            "GOOGLE_SHEETS_API_KEY",
+            "\"${project.findProperty("GOOGLE_SHEETS_API_KEY") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "GOOGLE_SHEETS_ID",
+            "\"${project.findProperty("GOOGLE_SHEETS_ID") ?: ""}\""
+        )
         buildConfigField("String", "MIXPANEL_PROJECT_TOKEN", "\"${project.findProperty("MIXPANEL_PROJECT_TOKEN") ?: ""}\"")
     }
 
@@ -136,6 +146,9 @@ dependencies {
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
     implementation (libs.androidx.lifecycle.livedata.ktx)
 
+    // OkHttp for Google Sheets API
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     //MixPanel
     implementation(libs.mixpanel.android)
 
