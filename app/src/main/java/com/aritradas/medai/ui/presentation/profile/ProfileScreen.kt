@@ -1,7 +1,6 @@
 package com.aritradas.medai.ui.presentation.profile
 
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -99,8 +98,7 @@ fun ProfileScreen(
                 Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
                 viewModel.clearFeatureRequestState()
             }
-            else -> { /* Loading state handled in UI */
-            }
+            else -> {}
         }
     }
 
@@ -172,6 +170,11 @@ fun ProfileScreen(
                             ).show()
                             return@Button
                         }
+                        Toast.makeText(
+                            context,
+                            "Your request is being saved",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         viewModel.submitFeatureRequest(featureName, featureEmail, featureDetail)
                     },
                     modifier = Modifier.fillMaxWidth(),
