@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -79,6 +80,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.DrugDetailSheetContent
+import com.aritradas.medai.utils.MixpanelManager
+import com.aritradas.medai.utils.UtilsKt.formatReportSummaryForSharing
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -166,6 +169,7 @@ fun MedicalReportSummarizeScreen(
     val handleSummarize = {
         imageUri?.let { uri ->
             reportViewModel.validateAndAnalyzeReport(uri)
+            MixpanelManager.trackMedicalReportSummarization()
         }
         Unit
     }
@@ -272,9 +276,36 @@ fun MedicalReportSummarizeScreen(
                     }
                 },
                 actions = {
+
                     uiState.summary?.let {
                         IconButton(
-                            onClick = { reportViewModel.saveMedicalReport() },
+                            onClick = {
+                                val shareText = formatReportSummaryForSharing(it)
+                                val shareIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                    putExtra(Intent.EXTRA_SUBJECT, "Medical Report Summary")
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(shareIntent, "Share Medical Report Summary")
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share medical report summary",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    uiState.summary?.let {
+                        IconButton(
+                            onClick = {
+                                reportViewModel.saveMedicalReport()
+                                MixpanelManager.savedMedicalReport()
+                            },
                             enabled = !uiState.isSaving
                         ) {
                             if (uiState.isSaving) {

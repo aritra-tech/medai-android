@@ -12,6 +12,7 @@ import com.aritradas.medai.data.repository.FeatureRequestRepositoryImpl
 import com.aritradas.medai.data.repository.MedicalReportRepositoryImpl
 import com.aritradas.medai.data.repository.MedicineDetailsRepositoryImpl
 import com.aritradas.medai.data.repository.PrescriptionRepositoryImpl
+import com.aritradas.medai.data.repository.ThemeRepositoryImpl
 import com.aritradas.medai.domain.repository.AuthRepository
 import com.aritradas.medai.domain.repository.FeatureRequestRepository
 import com.aritradas.medai.domain.repository.MedicalReportRepository
@@ -19,6 +20,7 @@ import com.aritradas.medai.domain.repository.MedicineDetailsRepository
 import com.aritradas.medai.domain.repository.PrescriptionRepository
 import com.aritradas.medai.network.GoogleSheetsService
 import com.aritradas.medai.network.RetrofitClient
+import com.aritradas.medai.domain.repository.ThemeRepository
 import com.aritradas.medai.utils.AppBioMetricManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -92,6 +94,9 @@ object AppModule {
     @Provides
     fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil =
         DataStoreUtil(context)
+    fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil {
+       return DataStoreUtil(context)
+    }
 
     @Provides
     @Singleton
@@ -105,4 +110,10 @@ object AppModule {
     fun provideAppBioMetricManager(@ApplicationContext context: Context): AppBioMetricManager {
         return AppBioMetricManager(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideThemeRepository(
+        dataStoreManager: DataStoreUtil
+    ): ThemeRepository = ThemeRepositoryImpl(dataStoreManager)
 }

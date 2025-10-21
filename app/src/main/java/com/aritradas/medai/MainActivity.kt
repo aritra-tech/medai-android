@@ -5,9 +5,11 @@ import android.app.Activity
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
@@ -40,6 +43,7 @@ class MainActivity : FragmentActivity() {
     lateinit var appBioMetricManager: AppBioMetricManager
 
     private lateinit var splashViewModel: SplashViewModel
+    private val mainViewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -56,8 +60,8 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val context = this
-            // State to track if biometric is enabled
+            val context = this@MainActivity
+            val themePreference by mainViewModel.themePreference.collectAsState()
             var biometricEnabled by remember { mutableStateOf<Boolean?>(null) }
             // State to track if unlocked (auth success)
             var unlocked by remember { mutableStateOf(false) }
@@ -93,7 +97,9 @@ class MainActivity : FragmentActivity() {
                 LaunchedEffect(Unit) {
                     checkForAppUpdate()
                 }
-                MedAITheme {
+                MedAITheme(
+                    themePreference = themePreference
+                ) {
                     Navigation(splashViewModel = splashViewModel)
                 }
             }
