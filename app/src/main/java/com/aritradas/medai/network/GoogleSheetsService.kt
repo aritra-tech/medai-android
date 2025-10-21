@@ -9,5 +9,5 @@ interface GoogleSheetsService {
     @POST("exec")
     suspend fun submitFeatureRequest(
         @Body featureRequest: FeatureRequest
-    ): Response<Any>
+    ): Response<Unit>
 }

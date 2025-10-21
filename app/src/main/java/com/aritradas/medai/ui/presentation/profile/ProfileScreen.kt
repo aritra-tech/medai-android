@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +57,7 @@ import com.aritradas.medai.utils.Constants
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -87,22 +89,24 @@ fun ProfileScreen(
     }
 
     LaunchedEffect(featureRequestState) {
-        val currentState = featureRequestState
-        when (currentState) {
-            is Resource.Success -> {
-                Toast.makeText(context, currentState.data, Toast.LENGTH_LONG).show()
-                showBottomSheet = false
-                featureName = ""
-                featureEmail = ""
-                featureDetail = ""
-                viewModel.clearFeatureRequestState()
+        snapshotFlow { featureRequestState }
+            .collectLatest {
+                when (it) {
+                    is Resource.Success -> {
+                        Toast.makeText(context, it.data, Toast.LENGTH_LONG).show()
+                        showBottomSheet = false
+                        featureName = ""
+                        featureEmail = ""
+                        featureDetail = ""
+                        viewModel.clearFeatureRequestState()
+                    }
+                    is Resource.Error -> {
+                        Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
+                        viewModel.clearFeatureRequestState()
+                    }
+                    else -> {}
+                }
             }
-            is Resource.Error -> {
-                Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
-                viewModel.clearFeatureRequestState()
-            }
-            else -> {}
-        }
     }
 
     if (showBottomSheet) {
