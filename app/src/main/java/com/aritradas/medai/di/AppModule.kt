@@ -94,9 +94,6 @@ object AppModule {
     @Provides
     fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil =
         DataStoreUtil(context)
-    fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil {
-       return DataStoreUtil(context)
-    }
 
     @Provides
     @Singleton

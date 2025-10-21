@@ -9,6 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
+    private const val BASE_URL = "https://api.fda.gov/drug/"
     private const val GOOGLE_SHEETS_BASE_URL = Constants.GOOGLE_SHEET_WEB_APP_URL
     private const val API_KEY = BuildConfig.API_KEY
 
@@ -29,6 +30,15 @@ object RetrofitClient {
             chain.proceed(request)
         })
         .build()
+
+    val openFdaService: MedAIService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(client)
+            .build()
+            .create(MedAIService::class.java)
+    }
 
     val googleSheetsService: GoogleSheetsService by lazy {
         Retrofit.Builder()
