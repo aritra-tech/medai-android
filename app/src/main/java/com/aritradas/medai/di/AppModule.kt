@@ -5,17 +5,22 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.aritradas.medai.BuildConfig
 import com.aritradas.medai.R
 import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.data.repository.AuthRepositoryImpl
+import com.aritradas.medai.data.repository.FeatureRequestRepositoryImpl
 import com.aritradas.medai.data.repository.MedicalReportRepositoryImpl
 import com.aritradas.medai.data.repository.MedicineDetailsRepositoryImpl
 import com.aritradas.medai.data.repository.PrescriptionRepositoryImpl
 import com.aritradas.medai.data.repository.ThemeRepositoryImpl
 import com.aritradas.medai.domain.repository.AuthRepository
+import com.aritradas.medai.domain.repository.FeatureRequestRepository
 import com.aritradas.medai.domain.repository.MedicalReportRepository
 import com.aritradas.medai.domain.repository.MedicineDetailsRepository
 import com.aritradas.medai.domain.repository.PrescriptionRepository
+import com.aritradas.medai.network.GoogleSheetsService
+import com.aritradas.medai.network.RetrofitClient
 import com.aritradas.medai.domain.repository.ThemeRepository
 import com.aritradas.medai.utils.AppBioMetricManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -45,7 +50,7 @@ object AppModule {
         @ApplicationContext context: Context
     ): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.web_client_id))
+            .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
             .requestEmail()
             .build()
         return GoogleSignIn.getClient(context, gso)
@@ -78,9 +83,18 @@ object AppModule {
     ): MedicalReportRepository = medicalReportRepositoryImpl
 
     @Provides
-    fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil {
-       return DataStoreUtil(context)
-    }
+    @Singleton
+    fun provideGoogleSheetsService(): GoogleSheetsService = RetrofitClient.googleSheetsService
+
+    @Provides
+    @Singleton
+    fun provideFeatureRequestRepository(
+        googleSheetsService: GoogleSheetsService
+    ): FeatureRequestRepository = FeatureRequestRepositoryImpl(googleSheetsService)
+
+    @Provides
+    fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil =
+        DataStoreUtil(context)
 
     @Provides
     @Singleton

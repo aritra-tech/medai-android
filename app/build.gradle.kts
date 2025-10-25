@@ -21,14 +21,30 @@ android {
         applicationId = "com.aritradas.medai"
         minSdk = 24
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.0.8"
+        versionCode = 17
+        versionName = "1.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "GEMINI_API_KEY", "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\"")
         buildConfigField("String", "API_KEY", "\"${project.findProperty("API_KEY") ?: ""}\"")
+        buildConfigField(
+            "String",
+            "GOOGLE_SHEETS_API_KEY",
+            "\"${project.findProperty("GOOGLE_SHEETS_API_KEY") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "GOOGLE_SHEETS_ID",
+            "\"${project.findProperty("GOOGLE_SHEETS_ID") ?: ""}\""
+        )
         buildConfigField("String", "MIXPANEL_PROJECT_TOKEN", "\"${project.findProperty("MIXPANEL_PROJECT_TOKEN") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField(
+            "String",
+            "GOOGLE_SHEET_WEB_APP_URL",
+            "\"${project.findProperty("GOOGLE_SHEET_WEB_APP_URL") ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -136,6 +152,9 @@ dependencies {
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
     implementation (libs.androidx.lifecycle.livedata.ktx)
 
+    // OkHttp for Google Sheets API
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     //MixPanel
     implementation(libs.mixpanel.android)
 

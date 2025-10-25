@@ -37,12 +37,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.aritradas.medai.R
 import com.aritradas.medai.utils.UtilsKt
-import com.aritradas.medai.utils.UtilsKt.findActivity
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -52,7 +53,8 @@ fun ForgotPasswordScreen(
 
     val context = LocalContext.current
     var email by rememberSaveable { mutableStateOf("") }
-    val enableSendBtn by remember { derivedStateOf { UtilsKt.validateEmail(email) } }
+    var isEmailSent by rememberSaveable { mutableStateOf(false) }
+    val enableSendBtn by remember { derivedStateOf { UtilsKt.validateEmail(email) && !isEmailSent } }
     val resetPasswordRequestLiveData by authViewModel.resetPassword.observeAsState()
     val errorLiveData by authViewModel.errorLiveData.observeAsState()
     val isLoading by authViewModel.isLoading.observeAsState(false)
@@ -61,10 +63,8 @@ fun ForgotPasswordScreen(
 
     LaunchedEffect(resetPasswordRequestLiveData) {
         if (resetPasswordRequestLiveData == true) {
-            context.findActivity()?.let {
-                Toast.makeText(it, "Email sent to your registered email", Toast.LENGTH_LONG).show()
-                it.finish()
-            }
+            isEmailSent = true
+            Toast.makeText(context, "Email sent to your registered email", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -96,50 +96,100 @@ fun ForgotPasswordScreen(
                 verticalArrangement = Arrangement.Top
             ) {
 
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    placeholder = { Text("Enter your registered email") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = {
-                            focusManager.clearFocus()
-                            keyboardController?.hide()
-                            authViewModel.resetPassword(email)
+                if (isEmailSent) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.email_sent_successfully),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.we_ve_sent_a_password_reset_link_to),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = email,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.please_check_your_email_and_follow_the_instructions_to_reset_your_password),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.if_you_don_t_see_the_email_please_check_your_spam_junk_folder),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                isEmailSent = false
+                                email = ""
+                                authViewModel.resetPassword.value = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(stringResource(R.string.try_another_email))
                         }
-                    ),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading,
-                    shape = MaterialTheme.shapes.medium
-                )
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        placeholder = { Text("Enter your registered email") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                                authViewModel.resetPassword(email)
+                            }
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                }
 
                 Spacer(Modifier.weight(1f))
 
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        authViewModel.resetPassword(email)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    enabled = enableSendBtn && !isLoading
-                ) {
-                    if (isLoading) {
-                        LoadingIndicator(
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Send reset link",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                if (!isEmailSent) {
+                    Button(
+                        onClick = {
+                            focusManager.clearFocus()
+                            authViewModel.resetPassword(email)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        enabled = enableSendBtn && !isLoading
+                    ) {
+                        if (isLoading) {
+                            LoadingIndicator(
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.send_reset_link),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
                     }
                 }
             }

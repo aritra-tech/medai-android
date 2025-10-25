@@ -1,7 +1,6 @@
 package com.aritradas.medai.ui.presentation.profile
 
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -16,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Help
 import androidx.compose.material.icons.automirrored.outlined.Message
@@ -38,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,8 +54,10 @@ import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
 import com.aritradas.medai.utils.Constants
+import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -68,9 +72,11 @@ fun ProfileScreen(
     val activity = LocalActivity.current
     val context = LocalContext.current
     val userData by viewModel.userData.collectAsState()
+    val featureRequestState by viewModel.featureRequestState.collectAsState()
     var backPressedState by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState()
+    val scrollState = rememberScrollState()
 
     var featureName by remember { mutableStateOf("") }
     var featureEmail by remember { mutableStateOf("") }
@@ -82,6 +88,27 @@ fun ProfileScreen(
         }
     }
 
+    LaunchedEffect(featureRequestState) {
+        snapshotFlow { featureRequestState }
+            .collectLatest {
+                when (it) {
+                    is Resource.Success -> {
+                        Toast.makeText(context, it.data, Toast.LENGTH_LONG).show()
+                        showBottomSheet = false
+                        featureName = ""
+                        featureEmail = ""
+                        featureDetail = ""
+                        viewModel.clearFeatureRequestState()
+                    }
+                    is Resource.Error -> {
+                        Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
+                        viewModel.clearFeatureRequestState()
+                    }
+                    else -> {}
+                }
+            }
+    }
+
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -89,6 +116,7 @@ fun ProfileScreen(
                 featureName = ""
                 featureEmail = ""
                 featureDetail = ""
+                viewModel.clearFeatureRequestState()
             },
             sheetState = bottomSheetState
         ) {
@@ -105,12 +133,15 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                val isLoading = featureRequestState is Resource.Loading
+
                 OutlinedTextField(
                     value = featureName,
                     onValueChange = { featureName = it },
                     label = { Text("Name") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -120,7 +151,8 @@ fun ProfileScreen(
                     onValueChange = { featureEmail = it },
                     label = { Text("Email") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -129,30 +161,37 @@ fun ProfileScreen(
                     value = featureDetail,
                     onValueChange = { featureDetail = it },
                     label = { Text("Describe your feature/request") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = {
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:medai.summarizer@gmail.com")
-                        putExtra(
-                            Intent.EXTRA_SUBJECT,
-                            "Feature Request - MedAI"
-                        )
-                        putExtra(
-                            Intent.EXTRA_TEXT,
-                            "Name: $featureName\nEmail: $featureEmail\nFeature Request:\n$featureDetail"
-                        )
+                Button(
+                    onClick = {
+                        if (featureName.isBlank() || featureDetail.isBlank()) {
+                            Toast.makeText(
+                                context,
+                                "Please fill in all required fields",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+                        Toast.makeText(
+                            context,
+                            "Your request is being saved",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        viewModel.submitFeatureRequest(featureName, featureEmail, featureDetail)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
+                ) {
+                    val currentState = featureRequestState
+                    when (currentState) {
+                        is Resource.Loading -> Text("Submitting...")
+                        else -> Text("Submit")
                     }
-                    context.startActivity(intent)
-                    showBottomSheet = false
-                    featureName = ""
-                    featureEmail = ""
-                    featureDetail = ""
-                }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Submit")
                 }
             }
         }
@@ -178,6 +217,7 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
