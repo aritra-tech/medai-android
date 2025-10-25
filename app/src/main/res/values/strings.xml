@@ -7,7 +7,6 @@
     <string name="login_successful">Login Successful!</string>
     <string name="dismiss">Dismiss</string>
     <string name="press_back_again_to_exit">Press back again to exit</string>
-    <string name="web_client_id">470799090291-ude5t767554tkui3ingg6qhians20dlc.apps.googleusercontent.com</string>
     <string name="send_feedback">Send Feedback</string>
     <string name="terms_conditions"><![CDATA[Terms & Conditions]]></string>
     <string name="privacy_policy">Privacy Policy</string>
@@ -33,4 +32,5 @@
     <string name="rate_medai_on_the_play_store">Rate MedAI on the Play Store</string>
     <string name="invite_friends">Invite Friends</string>
     <string name="like_medai_share_with_friends">Like MedAI? Share with friends!</string>
+    <string name="continue_with_google">Continue with Google</string>
 </resources>
