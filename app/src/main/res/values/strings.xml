@@ -33,4 +33,10 @@
     <string name="invite_friends">Invite Friends</string>
     <string name="like_medai_share_with_friends">Like MedAI? Share with friends!</string>
     <string name="continue_with_google">Continue with Google</string>
+    <string name="if_you_don_t_see_the_email_please_check_your_spam_junk_folder">💡 If you don\'t see the email, please check your spam/junk folder.</string>
+    <string name="please_check_your_email_and_follow_the_instructions_to_reset_your_password">Please check your email and follow the instructions to reset your password.</string>
+    <string name="we_ve_sent_a_password_reset_link_to">We\'ve sent a password reset link to:</string>
+    <string name="email_sent_successfully">✓ Email Sent Successfully</string>
+    <string name="try_another_email">Try another email</string>
+    <string name="send_reset_link">Send reset link</string>
 </resources>

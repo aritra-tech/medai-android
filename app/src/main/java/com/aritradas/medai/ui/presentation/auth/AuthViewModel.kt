@@ -46,14 +46,20 @@ class AuthViewModel @Inject constructor(
             return@runIO
         }
 
-        isLoading.postValue(true) // Start loading
+        isLoading.postValue(true)
+        Timber.tag("AuthViewModel").d("Attempting to send password reset email to: $trimmedEmail")
+
         FirebaseAuth.getInstance().sendPasswordResetEmail(trimmedEmail)
             .addOnSuccessListener {
-                isLoading.postValue(false) // Stop loading
+                isLoading.postValue(false)
+                Timber.tag("AuthViewModel").d("Password reset email sent successfully")
                 resetPassword.postValue(true)
-            }.addOnFailureListener {
-                isLoading.postValue(false) // Stop loading
-                errorLiveData.postValue(it.message.toString())
+            }.addOnFailureListener { exception ->
+                isLoading.postValue(false)
+                val errorMessage = exception.message ?: "Failed to send reset email"
+                Timber.tag("AuthViewModel")
+                    .e(exception, "Failed to send password reset email: $errorMessage")
+                errorLiveData.postValue(errorMessage)
             }
     }
 
@@ -105,18 +111,22 @@ class AuthViewModel @Inject constructor(
                 errorLiveData.postValue("Name cannot be empty")
                 return@runIO
             }
+
             trimmedEmail.isEmpty() -> {
                 errorLiveData.postValue("Email cannot be empty")
                 return@runIO
             }
+
             !validateEmail(trimmedEmail) -> {
                 errorLiveData.postValue("Please enter a valid email address")
                 return@runIO
             }
+
             password.isEmpty() -> {
                 errorLiveData.postValue("Password cannot be empty")
                 return@runIO
             }
+
             password.length < 6 -> {
                 errorLiveData.postValue("Password must be at least 6 characters long")
                 return@runIO
