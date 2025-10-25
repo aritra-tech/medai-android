@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,7 +46,6 @@ import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.auth.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -88,20 +90,20 @@ fun WelcomeScreen(
                 if (idToken != null) {
                     authViewModel.signInWithGoogle(idToken)
                 } else {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.google_sign_in_failed_no_id_token),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: ApiException) {
                 Toast.makeText(
                     context,
-                    context.getString(R.string.google_sign_in_failed_no_id_token),
+                    "Google Sign-In failed: ${e.localizedMessage}",
                     Toast.LENGTH_SHORT
                 ).show()
             }
-        } catch (e: ApiException) {
-            Toast.makeText(
-                context,
-                "Google Sign-In failed: ${e.localizedMessage}",
-                Toast.LENGTH_SHORT
-            ).show()
         }
-    }
 
     LaunchedEffect(googleSignInResult) {
         when (val result = googleSignInResult) {
@@ -171,6 +173,35 @@ fun WelcomeScreen(
             )
 
             Spacer(modifier = Modifier.weight(1f))
+
+            FilledTonalButton(
+                onClick = { 
+                    val signInIntent = authViewModel.getGoogleSignInIntent(context)
+                    launcher.launch(signInIntent)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.google_color_icon),
+                        contentDescription = "Google logo",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.continue_with_google),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             FilledTonalButton(
                 onClick = {

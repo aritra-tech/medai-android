@@ -1,13 +1,19 @@
 package com.aritradas.medai.ui.presentation.auth
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aritradas.medai.BuildConfig
+import com.aritradas.medai.R
 import com.aritradas.medai.domain.model.User
 import com.aritradas.medai.domain.repository.AuthRepository
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.validateEmail
 import com.aritradas.medai.utils.runIO
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -157,6 +163,15 @@ class AuthViewModel @Inject constructor(
                     errorLiveData.postValue("Sign up failed: $errorMessage")
                 }
             }
+    }
+
+    fun getGoogleSignInIntent(context: Context): Intent {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+            .requestEmail()
+            .build()
+        val googleSignInClient = GoogleSignIn.getClient(context, gso)
+        return googleSignInClient.signInIntent
     }
 
     fun signInWithGoogle(idToken: String) {

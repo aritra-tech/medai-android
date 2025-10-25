@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.aritradas.medai.BuildConfig
 import com.aritradas.medai.R
 import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.data.repository.AuthRepositoryImpl
@@ -49,7 +50,7 @@ object AppModule {
         @ApplicationContext context: Context
     ): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.web_client_id))
+            .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
             .requestEmail()
             .build()
         return GoogleSignIn.getClient(context, gso)
