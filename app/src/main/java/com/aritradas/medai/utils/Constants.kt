@@ -24,8 +24,6 @@ object Constants {
     const val PRIVACY_POLICY = "https://www.freeprivacypolicy.com/live/6974b6ca-8e44-4fc3-b33b-53ef9eb988ca"
     const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.aritradas.medai"
 
-    const val GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby_6YC3rbWUwh5diaCh7377PzcrSDTgMKWHVI46yvp_i8pnzqsAiQjJwj-im0WXSFvy_w/"
-
     const val INVITE = """
             Hey there! I've been using this amazing app and thought you might like it too! 😊 Check it out: https://play.google.com/store/apps/details?id=com.aritradas.medai
     """

@@ -40,6 +40,11 @@ android {
         )
         buildConfigField("String", "MIXPANEL_PROJECT_TOKEN", "\"${project.findProperty("MIXPANEL_PROJECT_TOKEN") ?: ""}\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField(
+            "String",
+            "GOOGLE_SHEET_WEB_APP_URL",
+            "\"${project.findProperty("GOOGLE_SHEET_WEB_APP_URL") ?: ""}\""
+        )
     }
 
     buildTypes {
