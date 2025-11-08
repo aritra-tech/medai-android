@@ -21,8 +21,8 @@ android {
         applicationId = "com.aritradas.medai"
         minSdk = 24
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.0.9"
+        versionCode = 18
+        versionName = "1.0.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -153,8 +153,9 @@ dependencies {
     implementation (libs.androidx.lifecycle.livedata.ktx)
 
     // OkHttp for Google Sheets API
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+
     //MixPanel
     implementation(libs.mixpanel.android)
 
