@@ -97,10 +97,33 @@ fun WelcomeScreen(
                     ).show()
                 }
             } catch (e: ApiException) {
+                val errorMessage = when (e.statusCode) {
+                    com.google.android.gms.common.api.CommonStatusCodes.SIGN_IN_REQUIRED -> {
+                        "Google Sign-In required. Please try again."
+                    }
+                    com.google.android.gms.common.api.CommonStatusCodes.NETWORK_ERROR -> {
+                        "Network error. Please check your internet connection."
+                    }
+                    com.google.android.gms.common.api.CommonStatusCodes.INTERNAL_ERROR -> {
+                        "Internal error. Please try again later."
+                    }
+                    com.google.android.gms.common.api.CommonStatusCodes.INVALID_ACCOUNT -> {
+                        "Invalid account. Please try again."
+                    }
+                    com.google.android.gms.common.api.CommonStatusCodes.DEVELOPER_ERROR -> {
+                        "Configuration error. Please contact support. Error code: ${e.statusCode}"
+                    }
+                    com.google.android.gms.common.api.CommonStatusCodes.ERROR -> {
+                        "An error occurred. Please try again."
+                    }
+                    else -> {
+                        "Google Sign-In failed: ${e.localizedMessage} (Error code: ${e.statusCode})"
+                    }
+                }
                 Toast.makeText(
                     context,
-                    "Google Sign-In failed: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
+                    errorMessage,
+                    Toast.LENGTH_LONG
                 ).show()
             }
         }
