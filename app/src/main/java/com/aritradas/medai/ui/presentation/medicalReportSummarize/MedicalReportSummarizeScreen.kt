@@ -79,7 +79,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.aritradas.medai.ui.presentation.prescriptionSummarize.DrugDetailSheetContent
+import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.formatReportSummaryForSharing
 import java.io.File

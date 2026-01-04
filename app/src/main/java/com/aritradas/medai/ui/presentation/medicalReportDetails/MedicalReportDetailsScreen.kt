@@ -53,7 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.aritradas.medai.ui.presentation.medicalReportSummarize.MedicalReportSummarizeViewModel
-import com.aritradas.medai.ui.presentation.prescriptionSummarize.DrugDetailSheetContent
+import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
