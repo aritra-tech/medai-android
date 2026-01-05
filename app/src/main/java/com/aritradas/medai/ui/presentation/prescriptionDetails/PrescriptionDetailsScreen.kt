@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Person
@@ -31,6 +32,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -58,8 +60,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.aritradas.medai.domain.model.Medication
-import com.aritradas.medai.ui.presentation.prescriptionSummarize.DrugDetailSheetContent
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.PrescriptionSummarizeViewModel
+import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -120,11 +122,18 @@ fun PrescriptionDetailsScreen(
                 when {
                     isDrugLoading -> {
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            LoadingIndicator(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .align(Alignment.Center)
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                LoadingIndicator(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                )
+                                Text(
+                                    text = "Loading drug details",
+                                )
+                            }
                         }
                     }
 
@@ -553,7 +562,7 @@ private fun MedicationsCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            medications.forEach { medication ->
+            medications.forEachIndexed { index, medication ->
                 MedicationItem(
                     medication = medication,
                     onClick = {
@@ -563,7 +572,13 @@ private fun MedicationsCard(
                         onShowDrugDetailModal(true)
                     }
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                if (index < medications.size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -576,34 +591,52 @@ private fun MedicationItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = androidx.compose.ui.graphics.Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = medication.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Dosage: ${medication.dosage}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = "Frequency: ${medication.frequency}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = "Duration: ${medication.duration}",
-                style = MaterialTheme.typography.bodySmall
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = medication.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Dosage: ${medication.dosage}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Frequency: ${medication.frequency}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Duration: ${medication.duration}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
             )
         }
     }
