@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Help
@@ -24,8 +27,10 @@ import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -56,6 +61,17 @@ import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
 import com.aritradas.medai.utils.Constants
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import com.aritradas.medai.ui.theme.Gold1
+import com.aritradas.medai.ui.theme.Gold2
+import com.revenuecat.purchases.CustomerInfo
+import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.models.StoreTransaction
+import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
+import android.util.Log
+import com.revenuecat.purchases.ui.revenuecatui.PaywallDialog
+import com.revenuecat.purchases.ui.revenuecatui.PaywallDialogOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -77,6 +93,7 @@ fun ProfileScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState()
     val scrollState = rememberScrollState()
+    var showPaywall by remember { mutableStateOf(false) }
 
     var featureName by remember { mutableStateOf("") }
     var featureEmail by remember { mutableStateOf("") }
@@ -107,6 +124,36 @@ fun ProfileScreen(
                     else -> {}
                 }
             }
+    }
+
+    if (showPaywall) {
+        PaywallDialog(
+            PaywallDialogOptions.Builder()
+                .setDismissRequest { showPaywall = false }
+                .setListener(object : PaywallListener {
+                    override fun onPurchaseCompleted(
+                        customerInfo: CustomerInfo,
+                        storeTransaction: StoreTransaction
+                    ) {
+                        Log.d("PAYWALL", "Purchase Completed")
+                        showPaywall = false
+                    }
+
+                    override fun onPurchaseError(error: PurchasesError) {
+                        Log.e("PAYWALL", "Purchase Error: ${error.message}")
+                    }
+
+                    override fun onRestoreCompleted(customerInfo: CustomerInfo) {
+                        Log.d("PAYWALL", "Restore Completed")
+                        showPaywall = false
+                    }
+
+                    override fun onRestoreError(error: PurchasesError) {
+                        Log.e("PAYWALL", "Restore Error: ${error.message}")
+                    }
+                })
+                .build()
+        )
     }
 
     if (showBottomSheet) {
@@ -264,6 +311,47 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showPaywall = true }
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(Gold1, Gold2)
+                        )
+                    )
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    imageVector = Icons.Outlined.WorkspacePremium,
+                    contentDescription = "Pro Icon",
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = stringResource(R.string.unlock_medai_pro),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.enjoy_all_the_benefits_of_medai_pro),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             SettingsCard(
                 isFirstItem = true,
