@@ -13,7 +13,6 @@ import com.aritradas.medai.domain.repository.ThemeRepository
 import com.aritradas.medai.utils.AppBioMetricManager
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.runIO
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -96,8 +95,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun logout() = runIO {
-        FirebaseAuth.getInstance().signOut()
-        onLogOutComplete.postValue(true)
+        when (authRepository.signOut()) {
+            is Resource.Success -> onLogOutComplete.postValue(true)
+            is Resource.Error -> onLogOutComplete.postValue(false)
+            else -> onLogOutComplete.postValue(false)
+        }
     }
 
     fun deleteAccount() = runIO {

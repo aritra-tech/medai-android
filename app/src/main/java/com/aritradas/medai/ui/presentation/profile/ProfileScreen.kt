@@ -58,6 +58,7 @@ import com.aritradas.medai.BuildConfig
 import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
+import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
 import com.aritradas.medai.utils.Constants
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
@@ -65,13 +66,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.aritradas.medai.ui.theme.Gold1
 import com.aritradas.medai.ui.theme.Gold2
-import com.revenuecat.purchases.CustomerInfo
-import com.revenuecat.purchases.PurchasesError
-import com.revenuecat.purchases.models.StoreTransaction
-import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
-import android.util.Log
-import com.revenuecat.purchases.ui.revenuecatui.PaywallDialog
-import com.revenuecat.purchases.ui.revenuecatui.PaywallDialogOptions
+import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -94,6 +90,7 @@ fun ProfileScreen(
     val bottomSheetState = rememberModalBottomSheetState()
     val scrollState = rememberScrollState()
     var showPaywall by remember { mutableStateOf(false) }
+    var isProUser by remember { mutableStateOf(false) }
 
     var featureName by remember { mutableStateOf("") }
     var featureEmail by remember { mutableStateOf("") }
@@ -126,35 +123,23 @@ fun ProfileScreen(
             }
     }
 
-    if (showPaywall) {
-        PaywallDialog(
-            PaywallDialogOptions.Builder()
-                .setDismissRequest { showPaywall = false }
-                .setListener(object : PaywallListener {
-                    override fun onPurchaseCompleted(
-                        customerInfo: CustomerInfo,
-                        storeTransaction: StoreTransaction
-                    ) {
-                        Log.d("PAYWALL", "Purchase Completed")
-                        showPaywall = false
-                    }
+    LaunchedEffect(Unit) {
+        Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
+            override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
+                isProUser = customerInfo.entitlements.active.isNotEmpty()
+            }
 
-                    override fun onPurchaseError(error: PurchasesError) {
-                        Log.e("PAYWALL", "Purchase Error: ${error.message}")
-                    }
-
-                    override fun onRestoreCompleted(customerInfo: CustomerInfo) {
-                        Log.d("PAYWALL", "Restore Completed")
-                        showPaywall = false
-                    }
-
-                    override fun onRestoreError(error: PurchasesError) {
-                        Log.e("PAYWALL", "Restore Error: ${error.message}")
-                    }
-                })
-                .build()
-        )
+            override fun onError(error: com.revenuecat.purchases.PurchasesError) {
+                isProUser = false
+            }
+        })
     }
+
+    ProPaywallSheet(
+        visible = showPaywall,
+        onDismiss = { showPaywall = false },
+        onSubscribed = { isProUser = true }
+    )
 
     if (showBottomSheet) {
         ModalBottomSheet(
@@ -311,47 +296,49 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showPaywall = true }
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Gold1, Gold2)
+            if (!isProUser) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showPaywall = true }
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Gold1, Gold2)
+                            )
                         )
-                    )
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    modifier = Modifier.size(24.dp),
-                    imageVector = Icons.Outlined.WorkspacePremium,
-                    contentDescription = "Pro Icon",
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(14.dp))
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(R.string.unlock_medai_pro),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = Icons.Outlined.WorkspacePremium,
+                        contentDescription = "Pro Icon",
+                        tint = Color.White
                     )
+                    Spacer(modifier = Modifier.width(14.dp))
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.enjoy_all_the_benefits_of_medai_pro),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = stringResource(R.string.unlock_medai_pro),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.enjoy_all_the_benefits_of_medai_pro),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             SettingsCard(
                 isFirstItem = true,
