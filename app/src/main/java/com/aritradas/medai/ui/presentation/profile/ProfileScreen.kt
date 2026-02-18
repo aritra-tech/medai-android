@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -272,15 +273,39 @@ fun ProfileScreen(
                     Box(
                         modifier = Modifier
                             .size(110.dp)
-                            .clip(CircleShape)
-                            .background(color = MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
                     ) {
-                        val initials = userData?.username?.let { getInitials(it) } ?: ""
-                        Text(
-                            text = initials,
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(CircleShape)
+                                .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val initials = userData?.username?.let { getInitials(it) } ?: ""
+                            Text(
+                                text = initials,
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+
+                        if (isProUser) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(brush = Brush.horizontalGradient(listOf(Gold1, Gold2))),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.WorkspacePremium,
+                                    contentDescription = "Pro User Badge",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
