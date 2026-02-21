@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Help
@@ -24,8 +28,10 @@ import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -53,9 +59,16 @@ import com.aritradas.medai.BuildConfig
 import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
+import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
 import com.aritradas.medai.utils.Constants
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import com.aritradas.medai.ui.theme.Gold1
+import com.aritradas.medai.ui.theme.Gold2
+import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -77,6 +90,8 @@ fun ProfileScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState()
     val scrollState = rememberScrollState()
+    var showPaywall by remember { mutableStateOf(false) }
+    var isProUser by remember { mutableStateOf(false) }
 
     var featureName by remember { mutableStateOf("") }
     var featureEmail by remember { mutableStateOf("") }
@@ -108,6 +123,24 @@ fun ProfileScreen(
                 }
             }
     }
+
+    LaunchedEffect(Unit) {
+        Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
+            override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
+                isProUser = customerInfo.entitlements.active.isNotEmpty()
+            }
+
+            override fun onError(error: com.revenuecat.purchases.PurchasesError) {
+                isProUser = false
+            }
+        })
+    }
+
+    ProPaywallSheet(
+        visible = showPaywall,
+        onDismiss = { showPaywall = false },
+        onSubscribed = { isProUser = true }
+    )
 
     if (showBottomSheet) {
         ModalBottomSheet(
@@ -240,15 +273,39 @@ fun ProfileScreen(
                     Box(
                         modifier = Modifier
                             .size(110.dp)
-                            .clip(CircleShape)
-                            .background(color = MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
                     ) {
-                        val initials = userData?.username?.let { getInitials(it) } ?: ""
-                        Text(
-                            text = initials,
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(CircleShape)
+                                .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val initials = userData?.username?.let { getInitials(it) } ?: ""
+                            Text(
+                                text = initials,
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+
+                        if (isProUser) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(brush = Brush.horizontalGradient(listOf(Gold1, Gold2))),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.WorkspacePremium,
+                                    contentDescription = "Pro User Badge",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -264,6 +321,49 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            if (!isProUser) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showPaywall = true }
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                            )
+                        )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = Icons.Outlined.WorkspacePremium,
+                        contentDescription = "Pro Icon",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = stringResource(R.string.unlock_medai_pro),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.enjoy_all_the_benefits_of_medai_pro),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             SettingsCard(
                 isFirstItem = true,

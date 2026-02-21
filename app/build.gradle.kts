@@ -21,8 +21,8 @@ android {
         applicationId = "com.aritradas.medai"
         minSdk = 24
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.0.10"
+        versionCode = 22
+        versionName = "1.0.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -40,6 +40,7 @@ android {
         )
         buildConfigField("String", "MIXPANEL_PROJECT_TOKEN", "\"${project.findProperty("MIXPANEL_PROJECT_TOKEN") ?: ""}\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "REVENUECAT_API_KEY", "\"${project.findProperty("REVENUECAT_API_KEY") ?: ""}\"")
         buildConfigField(
             "String",
             "GOOGLE_SHEET_WEB_APP_URL",
@@ -166,6 +167,9 @@ dependencies {
     //MixPanel
     implementation(libs.mixpanel.android)
 
+    // Billing
+    implementation(libs.billing.ktx)
+
     //Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -174,4 +178,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Revenue Cat
+    implementation(libs.purchases)
+    implementation(libs.purchases.ui)
 }

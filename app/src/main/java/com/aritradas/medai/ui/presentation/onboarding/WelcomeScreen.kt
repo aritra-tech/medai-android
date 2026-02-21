@@ -198,35 +198,6 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             FilledTonalButton(
-                onClick = { 
-                    val signInIntent = authViewModel.getGoogleSignInIntent(context)
-                    launcher.launch(signInIntent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.google_color_icon),
-                        contentDescription = "Google logo",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = stringResource(R.string.continue_with_google),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FilledTonalButton(
                 onClick = {
                     navController.navigate(Screens.SignUp)
                 },

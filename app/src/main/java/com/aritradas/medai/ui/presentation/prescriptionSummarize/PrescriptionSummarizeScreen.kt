@@ -46,6 +46,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -60,10 +61,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,14 +90,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.aritradas.medai.R
+import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.Medication
+import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
+import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.MedicationCard
+import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
 import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.formatSummaryForSharing
+import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -104,8 +114,12 @@ fun PrescriptionSummarizeScreen(
     prescriptionViewModel: PrescriptionSummarizeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val dataStoreUtil = remember(context) { DataStoreUtil(context) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val uiState by prescriptionViewModel.uiState.collectAsState()
+    val freeSummaryUsageCount by dataStoreUtil.getSummaryUsageCount().collectAsState(initial = 0)
+    val freeSummaryRemaining = (DataStoreUtil.FREE_SUMMARY_LIMIT - freeSummaryUsageCount).coerceAtLeast(0)
 
     var showReportDialog by remember { mutableStateOf(false) }
     var showReportTypeDialog by remember { mutableStateOf(false) }
@@ -116,9 +130,23 @@ fun PrescriptionSummarizeScreen(
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     var showBackWarningDialog by remember { mutableStateOf(false) }
     var showDrugDetailModal by remember { mutableStateOf(false) }
+    var showPaywallSheet by remember { mutableStateOf(false) }
+    var isProUser by remember { mutableStateOf(false) }
     val drugDetail by prescriptionViewModel.drugDetail.collectAsState()
     val isDrugLoading by prescriptionViewModel.isDrugLoading.collectAsState()
     val drugDetailError by prescriptionViewModel.drugDetailError.collectAsState()
+
+    LaunchedEffect(Unit) {
+        Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
+            override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
+                isProUser = customerInfo.entitlements.active.isNotEmpty()
+            }
+
+            override fun onError(error: com.revenuecat.purchases.PurchasesError) {
+                isProUser = false
+            }
+        })
+    }
 
     val createImageFile = {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -177,6 +205,17 @@ fun PrescriptionSummarizeScreen(
 
     val handleSummarize = {
         imageUri?.let { uri ->
+            if (!isProUser && freeSummaryRemaining <= 0) {
+                showPaywallSheet = true
+                return@let
+            }
+
+            if (!isProUser) {
+                scope.launch {
+                    dataStoreUtil.incrementSummaryUsageCount()
+                }
+            }
+
             prescriptionViewModel.validateAndAnalyzePrescription(uri)
             MixpanelManager.trackPrescriptionSummarization()
         }
@@ -261,6 +300,12 @@ fun PrescriptionSummarizeScreen(
             }
         }
     }
+
+    ProPaywallSheet(
+        visible = showPaywallSheet,
+        onDismiss = { showPaywallSheet = false },
+        onSubscribed = { isProUser = true }
+    )
 
     Scaffold(
         modifier = Modifier
@@ -492,6 +537,15 @@ fun PrescriptionSummarizeScreen(
                 }
             }
 
+            if (!isProUser) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Free summaries left: $freeSummaryRemaining/${DataStoreUtil.FREE_SUMMARY_LIMIT}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             // Display summary result
             uiState.summary?.let { summary ->
                 Spacer(modifier = Modifier.height(24.dp))
@@ -568,7 +622,7 @@ fun PrescriptionSummarizeScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            summary.medications.forEach { medication ->
+                            summary.medications.forEachIndexed { index, medication ->
                                 MedicationCard(
                                     medication = medication,
                                     onClick = {
@@ -579,7 +633,13 @@ fun PrescriptionSummarizeScreen(
                                         MixpanelManager.trackMedicineDetails()
                                     }
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
+                                if (index < summary.medications.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                        thickness = 0.5.dp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
@@ -916,163 +976,5 @@ fun PrescriptionSummarizeScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-fun DrugDetailSheetContent(detail: DrugResult) {
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Medicine name
-        Text(
-            text = detail.medicineName.replaceFirstChar { it.uppercase() },
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Uses section
-        DrugDetailSection(
-            title = "Uses",
-            content = detail.uses,
-            icon = Icons.Default.MedicalServices
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Benefits section
-        DrugDetailSection(
-            title = "Benefits",
-            content = detail.benefits,
-            icon = Icons.Default.CheckCircle
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Side effects section
-        DrugDetailSection(
-            title = "Side Effects",
-            content = detail.sideEffects,
-            icon = Icons.Default.Warning,
-            isWarning = true
-        )
-    }
-}
-
-@Composable
-private fun DrugDetailSection(
-    title: String,
-    content: List<String>,
-    icon: ImageVector,
-    isWarning: Boolean = false
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isWarning) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.primary
-                },
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isWarning) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isWarning) {
-                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                }
-            )
-        ) {
-            content.forEach { item ->
-                Text(
-                    modifier = Modifier.padding(8.dp),
-                    text = "• $item",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MedicationCard(
-    medication: Medication,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            Text(
-                text = medication.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            if (medication.dosage.isNotEmpty()) {
-                Text(
-                    text = "Dosage: ${medication.dosage}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (medication.frequency.isNotEmpty()) {
-                Text(
-                    text = "Frequency: ${medication.frequency}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (medication.duration.isNotEmpty()) {
-                Text(
-                    text = "Duration: ${medication.duration}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
     }
 }
