@@ -26,6 +26,7 @@ import com.aritradas.medai.ui.presentation.onboarding.WelcomeScreen
 import com.aritradas.medai.ui.presentation.prescription.PrescriptionScreen
 import com.aritradas.medai.ui.presentation.prescriptionDetails.PrescriptionDetailsScreen
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.PrescriptionSummarizeScreen
+import com.aritradas.medai.ui.presentation.pillIdentification.PillIdentificationScreen
 import com.aritradas.medai.ui.presentation.profile.HelpScreen
 import com.aritradas.medai.ui.presentation.profile.ProfileScreen
 import com.aritradas.medai.ui.presentation.settings.SettingsScreen
@@ -161,6 +162,10 @@ fun Navigation(splashViewModel: SplashViewModel) {
 
             composable<Screens.Help> {
                 HelpScreen(navController = navController)
+            }
+
+            composable<Screens.PillIdentification> {
+                PillIdentificationScreen(navController = navController)
             }
         }
     }

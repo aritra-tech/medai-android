@@ -42,6 +42,9 @@ sealed class Screens {
 
     @Serializable
     data object Help : Screens()
+    
+    @Serializable
+    data object PillIdentification : Screens()
 
     @Serializable
     data object Loading : Screens()
