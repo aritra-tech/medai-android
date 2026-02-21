@@ -6,7 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.aritradas.medai.domain.model.ThemePreference
@@ -26,6 +26,8 @@ class DataStoreUtil @Inject constructor(context: Context) {
     companion object {
         val IS_BIOMETRIC_AUTH_SET_KEY = booleanPreferencesKey("biometric_auth")
         val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
+        val FREE_SUMMARY_USAGE_COUNT = intPreferencesKey("free_summary_usage_count")
+        const val FREE_SUMMARY_LIMIT = 2
         
         private const val TAG = "DataStoreUtil"
     }
@@ -57,5 +59,23 @@ class DataStoreUtil @Inject constructor(context: Context) {
                     Timber.tag(TAG).d("Theme preference retrieved: ${it.name}")
                 }
             }
+    }
+
+    fun getSummaryUsageCount(): Flow<Int> {
+        return dataStore.data
+            .catch { e ->
+                Timber.tag(TAG).e(e, "Error reading summary usage count from DataStore")
+                emit(emptyPreferences())
+            }
+            .map { prefs ->
+                prefs[FREE_SUMMARY_USAGE_COUNT] ?: 0
+            }
+    }
+
+    suspend fun incrementSummaryUsageCount() {
+        dataStore.edit { prefs ->
+            val currentCount = prefs[FREE_SUMMARY_USAGE_COUNT] ?: 0
+            prefs[FREE_SUMMARY_USAGE_COUNT] = currentCount + 1
+        }
     }
 }

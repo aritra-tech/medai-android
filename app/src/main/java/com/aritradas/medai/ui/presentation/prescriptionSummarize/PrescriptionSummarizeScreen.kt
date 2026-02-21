@@ -61,10 +61,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,16 +90,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.aritradas.medai.R
+import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.Medication
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.MedicationCard
+import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
 import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.formatSummaryForSharing
+import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -107,8 +114,12 @@ fun PrescriptionSummarizeScreen(
     prescriptionViewModel: PrescriptionSummarizeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val dataStoreUtil = remember(context) { DataStoreUtil(context) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val uiState by prescriptionViewModel.uiState.collectAsState()
+    val freeSummaryUsageCount by dataStoreUtil.getSummaryUsageCount().collectAsState(initial = 0)
+    val freeSummaryRemaining = (DataStoreUtil.FREE_SUMMARY_LIMIT - freeSummaryUsageCount).coerceAtLeast(0)
 
     var showReportDialog by remember { mutableStateOf(false) }
     var showReportTypeDialog by remember { mutableStateOf(false) }
@@ -119,9 +130,23 @@ fun PrescriptionSummarizeScreen(
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     var showBackWarningDialog by remember { mutableStateOf(false) }
     var showDrugDetailModal by remember { mutableStateOf(false) }
+    var showPaywallSheet by remember { mutableStateOf(false) }
+    var isProUser by remember { mutableStateOf(false) }
     val drugDetail by prescriptionViewModel.drugDetail.collectAsState()
     val isDrugLoading by prescriptionViewModel.isDrugLoading.collectAsState()
     val drugDetailError by prescriptionViewModel.drugDetailError.collectAsState()
+
+    LaunchedEffect(Unit) {
+        Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
+            override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
+                isProUser = customerInfo.entitlements.active.isNotEmpty()
+            }
+
+            override fun onError(error: com.revenuecat.purchases.PurchasesError) {
+                isProUser = false
+            }
+        })
+    }
 
     val createImageFile = {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -180,6 +205,17 @@ fun PrescriptionSummarizeScreen(
 
     val handleSummarize = {
         imageUri?.let { uri ->
+            if (!isProUser && freeSummaryRemaining <= 0) {
+                showPaywallSheet = true
+                return@let
+            }
+
+            if (!isProUser) {
+                scope.launch {
+                    dataStoreUtil.incrementSummaryUsageCount()
+                }
+            }
+
             prescriptionViewModel.validateAndAnalyzePrescription(uri)
             MixpanelManager.trackPrescriptionSummarization()
         }
@@ -264,6 +300,12 @@ fun PrescriptionSummarizeScreen(
             }
         }
     }
+
+    ProPaywallSheet(
+        visible = showPaywallSheet,
+        onDismiss = { showPaywallSheet = false },
+        onSubscribed = { isProUser = true }
+    )
 
     Scaffold(
         modifier = Modifier
@@ -493,6 +535,15 @@ fun PrescriptionSummarizeScreen(
                         Text("Summarize")
                     }
                 }
+            }
+
+            if (!isProUser) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Free summaries left: $freeSummaryRemaining/${DataStoreUtil.FREE_SUMMARY_LIMIT}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             // Display summary result
