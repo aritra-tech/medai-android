@@ -329,7 +329,7 @@ fun ProfileScreen(
                         .clip(RoundedCornerShape(20.dp))
                         .background(
                             brush = Brush.horizontalGradient(
-                                colors = listOf(Gold1, Gold2)
+                                colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
                             )
                         )
                         .padding(16.dp),
@@ -339,7 +339,7 @@ fun ProfileScreen(
                         modifier = Modifier.size(24.dp),
                         imageVector = Icons.Outlined.WorkspacePremium,
                         contentDescription = "Pro Icon",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(modifier = Modifier.width(14.dp))
 
@@ -350,14 +350,14 @@ fun ProfileScreen(
                         Text(
                             text = stringResource(R.string.unlock_medai_pro),
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(R.string.enjoy_all_the_benefits_of_medai_pro),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }

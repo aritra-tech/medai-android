@@ -39,6 +39,6 @@
     <string name="email_sent_successfully">✓ Email Sent Successfully</string>
     <string name="try_another_email">Try another email</string>
     <string name="send_reset_link">Send reset link</string>
-    <string name="unlock_medai_pro">Unlock MedAI Pro</string>
+    <string name="unlock_medai_pro">MedAI Pro</string>
     <string name="enjoy_all_the_benefits_of_medai_pro">Enjoy all the benefits of MedAI Pro!</string>
 </resources>
