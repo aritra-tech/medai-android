@@ -63,7 +63,11 @@ class AuthRepositoryImpl @Inject constructor(
                 .document(userId)
                 .get()
                 .await()
-            document.getString("name")
+            listOf("name", "username", "a")
+                .asSequence()
+                .mapNotNull(document::getString)
+                .map(String::trim)
+                .firstOrNull(String::isNotBlank)
         } catch (e: Exception) {
             null
         }

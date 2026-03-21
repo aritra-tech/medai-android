@@ -97,10 +97,12 @@ fun ProfileScreen(
     var featureName by remember { mutableStateOf("") }
     var featureEmail by remember { mutableStateOf("") }
     var featureDetail by remember { mutableStateOf("") }
+    val displayName = userData?.username?.takeIf { it.isNotBlank() } ?: ""
+    val profileInitials = getInitials(displayName)
 
     LaunchedEffect(showBottomSheet) {
         if (showBottomSheet && featureName.isBlank()) {
-            featureName = userData?.username ?: ""
+            featureName = userData?.username?.takeIf { it.isNotBlank() } ?: ""
         }
     }
 
@@ -282,9 +284,8 @@ fun ProfileScreen(
                                 .background(color = MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            val initials = userData?.username?.let { getInitials(it) } ?: ""
                             Text(
-                                text = initials,
+                                text = profileInitials,
                                 style = MaterialTheme.typography.titleLarge
                             )
                         }
@@ -311,12 +312,10 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    userData?.username?.let { name ->
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
             }
 

@@ -38,9 +38,16 @@ class ProfileViewModel @Inject constructor(
         val currentUser = authRepository.getCurrentUser()
         if (currentUser != null) {
             val userNameFromFirestore = authRepository.getUserNameFromFirestore(currentUser.uid)
+            val resolvedUserName = userNameFromFirestore
+                ?.takeIf { it.isNotBlank() }
+                ?: currentUser.displayName?.takeIf { it.isNotBlank() }
+                ?: currentUser.email
+                    ?.substringBefore("@")
+                    ?.takeIf { it.isNotBlank() }
+
             _userData.value = UserData(
                 userId = currentUser.uid,
-                username = userNameFromFirestore ?: currentUser.displayName, 
+                username = resolvedUserName,
                 profilePictureUrl = currentUser.photoUrl?.toString()
             )
         }
