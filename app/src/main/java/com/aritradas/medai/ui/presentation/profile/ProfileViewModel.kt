@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,8 +58,12 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _featureRequestState.value = Resource.Loading()
 
-            val timestamp =
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+            val timestamp = SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                Locale.US
+            ).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(Date())
             val featureRequest = FeatureRequest(
                 name = name,
                 email = email,
