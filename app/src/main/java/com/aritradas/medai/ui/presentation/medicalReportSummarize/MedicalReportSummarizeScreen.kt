@@ -84,6 +84,7 @@ import coil.compose.AsyncImage
 import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
+import com.aritradas.medai.ui.presentation.subscription.hasProEntitlement
 import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.formatReportSummaryForSharing
 import com.revenuecat.purchases.Purchases
@@ -127,7 +128,7 @@ fun MedicalReportSummarizeScreen(
     LaunchedEffect(Unit) {
         Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
             override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
-                isProUser = customerInfo.entitlements.active.isNotEmpty()
+                isProUser = customerInfo.hasProEntitlement()
             }
 
             override fun onError(error: com.revenuecat.purchases.PurchasesError) {
@@ -292,7 +293,7 @@ fun MedicalReportSummarizeScreen(
     ProPaywallSheet(
         visible = showPaywallSheet,
         onDismiss = { showPaywallSheet = false },
-        onSubscribed = { isProUser = true }
+        onSubscriptionStatusChanged = { isProUser = it }
     )
 
     Scaffold(

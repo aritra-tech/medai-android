@@ -60,6 +60,7 @@ import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
 import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
+import com.aritradas.medai.ui.presentation.subscription.hasProEntitlement
 import com.aritradas.medai.utils.Constants
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
@@ -127,7 +128,7 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
             override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
-                isProUser = customerInfo.entitlements.active.isNotEmpty()
+                isProUser = customerInfo.hasProEntitlement()
             }
 
             override fun onError(error: com.revenuecat.purchases.PurchasesError) {
@@ -139,7 +140,7 @@ fun ProfileScreen(
     ProPaywallSheet(
         visible = showPaywall,
         onDismiss = { showPaywall = false },
-        onSubscribed = { isProUser = true }
+        onSubscriptionStatusChanged = { isProUser = it }
     )
 
     if (showBottomSheet) {
