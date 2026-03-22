@@ -13,6 +13,7 @@ import com.aritradas.medai.domain.model.ThemePreference
 import com.aritradas.medai.utils.Resource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
@@ -27,6 +28,7 @@ class DataStoreUtil @Inject constructor(context: Context) {
         val IS_BIOMETRIC_AUTH_SET_KEY = booleanPreferencesKey("biometric_auth")
         val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
         val FREE_SUMMARY_USAGE_COUNT = intPreferencesKey("free_summary_usage_count")
+        val CURRENT_FREE_SUMMARY_USAGE_COUNT = intPreferencesKey("current_free_summary_usage_count")
         const val FREE_SUMMARY_LIMIT = 2
         
         private const val TAG = "DataStoreUtil"
@@ -62,9 +64,28 @@ class DataStoreUtil @Inject constructor(context: Context) {
     }
 
     fun getSummaryUsageCount(): Flow<Int> {
+        return getCurrentSummaryUsageCount()
+    }
+
+    fun getCurrentSummaryUsageCount(): Flow<Int> {
         return dataStore.data
             .catch { e ->
                 Timber.tag(TAG).e(e, "Error reading summary usage count from DataStore")
+                emit(emptyPreferences())
+            }
+            .map { prefs ->
+                prefs[CURRENT_FREE_SUMMARY_USAGE_COUNT] ?: prefs[FREE_SUMMARY_USAGE_COUNT] ?: 0
+            }
+    }
+
+    suspend fun incrementSummaryUsageCount() {
+        incrementGuestSummaryUsageCount()
+    }
+
+    fun getGuestSummaryUsageCount(): Flow<Int> {
+        return dataStore.data
+            .catch { e ->
+                Timber.tag(TAG).e(e, "Error reading guest summary usage count from DataStore")
                 emit(emptyPreferences())
             }
             .map { prefs ->
@@ -72,10 +93,36 @@ class DataStoreUtil @Inject constructor(context: Context) {
             }
     }
 
-    suspend fun incrementSummaryUsageCount() {
+    suspend fun getGuestSummaryUsageCountOnce(): Int {
+        return try {
+            dataStore.data.map { prefs ->
+                prefs[FREE_SUMMARY_USAGE_COUNT] ?: 0
+            }.first()
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error reading guest summary usage count once")
+            0
+        }
+    }
+
+    suspend fun incrementGuestSummaryUsageCount(): Int {
+        var updatedCount = 0
         dataStore.edit { prefs ->
             val currentCount = prefs[FREE_SUMMARY_USAGE_COUNT] ?: 0
-            prefs[FREE_SUMMARY_USAGE_COUNT] = currentCount + 1
+            updatedCount = currentCount + 1
+            prefs[FREE_SUMMARY_USAGE_COUNT] = updatedCount
+        }
+        return updatedCount
+    }
+
+    suspend fun setGuestSummaryUsageCount(count: Int) {
+        dataStore.edit { prefs ->
+            prefs[FREE_SUMMARY_USAGE_COUNT] = count.coerceAtLeast(0)
+        }
+    }
+
+    suspend fun setCurrentSummaryUsageCount(count: Int) {
+        dataStore.edit { prefs ->
+            prefs[CURRENT_FREE_SUMMARY_USAGE_COUNT] = count.coerceAtLeast(0)
         }
     }
 }

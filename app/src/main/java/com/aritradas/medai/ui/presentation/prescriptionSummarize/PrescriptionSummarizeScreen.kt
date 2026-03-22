@@ -91,11 +91,11 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.aritradas.medai.R
 import com.aritradas.medai.data.datastore.DataStoreUtil
-import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.Medication
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.MedicationCard
 import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
+import com.aritradas.medai.ui.presentation.subscription.SummaryUsageCard
 import com.aritradas.medai.ui.presentation.subscription.hasProEntitlement
 import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.formatSummaryForSharing
@@ -115,11 +115,9 @@ fun PrescriptionSummarizeScreen(
     prescriptionViewModel: PrescriptionSummarizeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val dataStoreUtil = remember(context) { DataStoreUtil(context) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val uiState by prescriptionViewModel.uiState.collectAsState()
-    val freeSummaryUsageCount by dataStoreUtil.getSummaryUsageCount().collectAsState(initial = 0)
+    val freeSummaryUsageCount by prescriptionViewModel.summaryUsageCount.collectAsState()
     val freeSummaryRemaining = (DataStoreUtil.FREE_SUMMARY_LIMIT - freeSummaryUsageCount).coerceAtLeast(0)
 
     var showReportDialog by remember { mutableStateOf(false) }
@@ -212,9 +210,7 @@ fun PrescriptionSummarizeScreen(
             }
 
             if (!isProUser) {
-                scope.launch {
-                    dataStoreUtil.incrementSummaryUsageCount()
-                }
+                prescriptionViewModel.incrementSummaryUsageCount()
             }
 
             prescriptionViewModel.validateAndAnalyzePrescription(uri)
@@ -397,6 +393,15 @@ fun PrescriptionSummarizeScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (!isProUser) {
+                Spacer(modifier = Modifier.height(16.dp))
+                SummaryUsageCard(
+                    remaining = freeSummaryRemaining,
+                    total = DataStoreUtil.FREE_SUMMARY_LIMIT,
+                    onUpgradeClick = { showPaywallSheet = true }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
             // Image upload section
             Box(
@@ -536,15 +541,6 @@ fun PrescriptionSummarizeScreen(
                         Text("Summarize")
                     }
                 }
-            }
-
-            if (!isProUser) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Free summaries left: $freeSummaryRemaining/${DataStoreUtil.FREE_SUMMARY_LIMIT}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             // Display summary result

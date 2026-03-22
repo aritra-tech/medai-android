@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.SavedMedicalReport
 import com.aritradas.medai.domain.repository.MedicalReportRepository
+import com.aritradas.medai.domain.repository.SummaryUsageRepository
 import com.aritradas.medai.ui.presentation.medicalReportSummarize.state.MedicalReportUiState
 import com.aritradas.medai.utils.ImageValidator
 import com.aritradas.medai.utils.Resource
@@ -25,6 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MedicalReportSummarizeViewModel @Inject constructor(
     private val reportRepository: MedicalReportRepository,
+    private val summaryUsageRepository: SummaryUsageRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -40,7 +42,22 @@ class MedicalReportSummarizeViewModel @Inject constructor(
     private val _drugDetailError = MutableStateFlow<String?>(null)
     val drugDetailError = _drugDetailError.asStateFlow()
 
+    private val _summaryUsageCount = MutableStateFlow(0)
+    val summaryUsageCount = _summaryUsageCount.asStateFlow()
+
     private var onSaveSuccess: (() -> Unit)? = null
+
+    init {
+        viewModelScope.launch {
+            summaryUsageRepository.observeUsageCount().collect { usageCount ->
+                _summaryUsageCount.value = usageCount
+            }
+        }
+
+        viewModelScope.launch {
+            summaryUsageRepository.syncUsageCount()
+        }
+    }
 
     fun setOnSaveSuccessCallback(callback: () -> Unit) {
         onSaveSuccess = callback
@@ -148,6 +165,13 @@ class MedicalReportSummarizeViewModel @Inject constructor(
             isValidReport = null,
             validationError = null
         )
+    }
+
+    fun incrementSummaryUsageCount() {
+        viewModelScope.launch {
+            val updatedUsage = summaryUsageRepository.incrementUsageCount()
+            _summaryUsageCount.value = updatedUsage
+        }
     }
 
     fun saveMedicalReport() {
