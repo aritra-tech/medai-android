@@ -22,7 +22,11 @@ class PrescriptionDetailsViewModel @Inject constructor(
 
     fun loadPrescription(prescriptionId: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(
+                prescription = null,
+                isLoading = true,
+                error = null
+            )
 
             when (val result = repository.getPrescriptionById(prescriptionId)) {
                 is Resource.Success -> {
@@ -34,6 +38,7 @@ class PrescriptionDetailsViewModel @Inject constructor(
 
                 is Resource.Error -> {
                     _uiState.value = _uiState.value.copy(
+                        prescription = null,
                         error = result.message,
                         isLoading = false
                     )

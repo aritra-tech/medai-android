@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,9 +39,16 @@ class ProfileViewModel @Inject constructor(
         val currentUser = authRepository.getCurrentUser()
         if (currentUser != null) {
             val userNameFromFirestore = authRepository.getUserNameFromFirestore(currentUser.uid)
+            val resolvedUserName = userNameFromFirestore
+                ?.takeIf { it.isNotBlank() }
+                ?: currentUser.displayName?.takeIf { it.isNotBlank() }
+                ?: currentUser.email
+                    ?.substringBefore("@")
+                    ?.takeIf { it.isNotBlank() }
+
             _userData.value = UserData(
                 userId = currentUser.uid,
-                username = userNameFromFirestore ?: currentUser.displayName, 
+                username = resolvedUserName,
                 profilePictureUrl = currentUser.photoUrl?.toString()
             )
         }
@@ -50,8 +58,12 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _featureRequestState.value = Resource.Loading()
 
-            val timestamp =
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+            val timestamp = SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                Locale.US
+            ).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(Date())
             val featureRequest = FeatureRequest(
                 name = name,
                 email = email,

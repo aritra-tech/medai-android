@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aritradas.medai.BuildConfig
 import com.aritradas.medai.R
-import com.aritradas.medai.domain.model.User
 import com.aritradas.medai.domain.repository.AuthRepository
+import com.aritradas.medai.domain.repository.SummaryUsageRepository
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.validateEmail
 import com.aritradas.medai.utils.runIO
@@ -27,7 +27,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val summaryUsageRepository: SummaryUsageRepository
 ) : ViewModel() {
 
     private val auth = Firebase.auth
@@ -88,6 +89,9 @@ class AuthViewModel @Inject constructor(
             .addOnCompleteListener { task ->
                 isLoading.postValue(false) // Stop loading
                 if (task.isSuccessful) {
+                    viewModelScope.launch {
+                        summaryUsageRepository.syncUsageCount()
+                    }
                     loginSuccess.postValue(true)
                 } else {
                     errorLiveData.postValue("Invalid email or password")
@@ -142,7 +146,10 @@ class AuthViewModel @Inject constructor(
                 if (task.isSuccessful) {
                     val user = auth.currentUser
 
-                    val userProfile = User(trimmedName, trimmedEmail)
+                    val userProfile = mapOf(
+                        "name" to trimmedName,
+                        "email" to trimmedEmail
+                    )
 
                     val userDB = FirebaseFirestore.getInstance()
                     user?.let {
@@ -153,6 +160,9 @@ class AuthViewModel @Inject constructor(
                                 isLoading.postValue(false) // Stop loading
                                 Timber.tag("AuthViewModel")
                                     .d("User profile is successfully created for user %s", user.uid)
+                                viewModelScope.launch {
+                                    summaryUsageRepository.syncUsageCount()
+                                }
                                 onSignedUp(user)
                                 registerStatus.postValue(true)
                             }
@@ -191,9 +201,9 @@ class AuthViewModel @Inject constructor(
             if (result is Resource.Success) {
                 val firebaseUser = Firebase.auth.currentUser
                 firebaseUser?.let { user ->
-                    val userProfile = User(
-                        name = user.displayName ?: "",
-                        email = user.email ?: ""
+                    val userProfile = mapOf(
+                        "name" to (user.displayName ?: ""),
+                        "email" to (user.email ?: "")
                     )
                     val userDB = FirebaseFirestore.getInstance()
                     userDB.collection("users")
@@ -204,9 +214,16 @@ class AuthViewModel @Inject constructor(
                                 userDB.collection("users")
                                     .document(user.uid)
                                     .set(userProfile)
+                            } else if (!document.contains("name") && document.contains("a")) {
+                                userDB.collection("users")
+                                    .document(user.uid)
+                                    .set(userProfile, com.google.firebase.firestore.SetOptions.merge())
                             }
                         }
                 }
+            }
+            if (result is Resource.Success) {
+                summaryUsageRepository.syncUsageCount()
             }
             isLoading.postValue(false)
             googleSignInResult.postValue(

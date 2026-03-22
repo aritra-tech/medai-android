@@ -8,6 +8,7 @@ import com.aritradas.medai.domain.model.DrugResult
 import com.aritradas.medai.domain.model.SavedPrescription
 import com.aritradas.medai.domain.repository.MedicineDetailsRepository
 import com.aritradas.medai.domain.repository.PrescriptionRepository
+import com.aritradas.medai.domain.repository.SummaryUsageRepository
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.state.PrescriptionUiState
 import com.aritradas.medai.utils.ImageValidator
 import com.aritradas.medai.utils.Resource
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class PrescriptionSummarizeViewModel @Inject constructor(
     private val prescriptionRepository: PrescriptionRepository,
     private val medicineDetailsRepository: MedicineDetailsRepository,
+    private val summaryUsageRepository: SummaryUsageRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -43,7 +45,22 @@ class PrescriptionSummarizeViewModel @Inject constructor(
     private val _drugDetailError = MutableStateFlow<String?>(null)
     val drugDetailError = _drugDetailError.asStateFlow()
 
+    private val _summaryUsageCount = MutableStateFlow(0)
+    val summaryUsageCount = _summaryUsageCount.asStateFlow()
+
     private var onSaveSuccess: (() -> Unit)? = null
+
+    init {
+        viewModelScope.launch {
+            summaryUsageRepository.observeUsageCount().collect { usageCount ->
+                _summaryUsageCount.value = usageCount
+            }
+        }
+
+        viewModelScope.launch {
+            summaryUsageRepository.syncUsageCount()
+        }
+    }
 
     fun setOnSaveSuccessCallback(callback: () -> Unit) {
         onSaveSuccess = callback
@@ -154,6 +171,13 @@ class PrescriptionSummarizeViewModel @Inject constructor(
             isValidPrescription = null,
             validationError = null
         )
+    }
+
+    fun incrementSummaryUsageCount() {
+        viewModelScope.launch {
+            val updatedUsage = summaryUsageRepository.incrementUsageCount()
+            _summaryUsageCount.value = updatedUsage
+        }
     }
 
     fun savePrescription() {

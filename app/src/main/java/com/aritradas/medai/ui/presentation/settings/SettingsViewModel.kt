@@ -9,6 +9,7 @@ import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.domain.model.ThemePreference
 import com.aritradas.medai.domain.repository.AuthRepository
 import com.aritradas.medai.domain.repository.BiometricAuthListener
+import com.aritradas.medai.domain.repository.SummaryUsageRepository
 import com.aritradas.medai.domain.repository.ThemeRepository
 import com.aritradas.medai.utils.AppBioMetricManager
 import com.aritradas.medai.utils.Resource
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val appBioMetricManager: AppBioMetricManager,
     private val authRepository: AuthRepository,
+    private val summaryUsageRepository: SummaryUsageRepository,
     private val themeRepository: ThemeRepository,
     dataStoreUtil: DataStoreUtil
 ): ViewModel() {
@@ -96,7 +98,10 @@ class SettingsViewModel @Inject constructor(
 
     fun logout() = runIO {
         when (authRepository.signOut()) {
-            is Resource.Success -> onLogOutComplete.postValue(true)
+            is Resource.Success -> {
+                summaryUsageRepository.syncUsageCount()
+                onLogOutComplete.postValue(true)
+            }
             is Resource.Error -> onLogOutComplete.postValue(false)
             else -> onLogOutComplete.postValue(false)
         }

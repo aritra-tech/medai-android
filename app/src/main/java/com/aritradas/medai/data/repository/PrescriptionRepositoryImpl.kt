@@ -215,43 +215,7 @@ class PrescriptionRepositoryImpl @Inject constructor(
                 val prescriptions = querySnapshot.documents.mapNotNull { document ->
                     try {
                         val data = document.data ?: return@mapNotNull null
-                        val summaryMap =
-                            data["summary"] as? Map<String, Any> ?: return@mapNotNull null
-
-                        // Parse the summary from Firestore data
-                        val medicationsData =
-                            summaryMap["medications"] as? List<Map<String, Any>> ?: emptyList()
-                        val medications = medicationsData.map { medMap ->
-                            Medication(
-                                name = medMap["name"] as? String ?: "",
-                                dosage = medMap["dosage"] as? String ?: "",
-                                frequency = medMap["frequency"] as? String ?: "",
-                                duration = medMap["duration"] as? String ?: ""
-                            )
-                        }
-
-                        val prescriptionSummary = PrescriptionSummary(
-                            doctorName = summaryMap["doctorName"] as? String ?: "Unknown Doctor",
-                            medications = medications,
-                            dosageInstructions = (summaryMap["dosageInstructions"] as? List<String>)
-                                ?: emptyList(),
-                            summary = summaryMap["summary"] as? String ?: "",
-                            warnings = (summaryMap["warnings"] as? List<String>) ?: emptyList(),
-                            prescriptionReason = summaryMap["prescriptionReason"] as? String
-                                ?: (data["prescriptionReason"] as? String
-                                    ?: ""),
-                            stepsToCure = (summaryMap["stepsToCure"] as? List<String>)
-                                ?: (data["stepsToCure"] as? List<String> ?: emptyList())
-                        )
-
-                        SavedPrescription(
-                            id = document.id,
-                            summary = prescriptionSummary,
-                            savedAt = (data["savedAt"] as? com.google.firebase.Timestamp)?.toDate()
-                                ?: java.util.Date(),
-                            title = data["title"] as? String ?: "Untitled Prescription",
-                            report = data["report"] as? String ?: ""
-                        )
+                        parseSavedPrescription(document.id, data)
                     } catch (e: Exception) {
                         null // Skip malformed documents
                     }
@@ -286,42 +250,8 @@ class PrescriptionRepositoryImpl @Inject constructor(
 
                 val data =
                     document.data ?: return@withContext Resource.Error("Invalid prescription data")
-                val summaryMap = data["summary"] as? Map<String, Any>
-                    ?: return@withContext Resource.Error("Invalid summary data")
-
-                // Parse the summary from Firestore data
-                val medicationsData =
-                    summaryMap["medications"] as? List<Map<String, Any>> ?: emptyList()
-                val medications = medicationsData.map { medMap ->
-                    Medication(
-                        name = medMap["name"] as? String ?: "",
-                        dosage = medMap["dosage"] as? String ?: "",
-                        frequency = medMap["frequency"] as? String ?: "",
-                        duration = medMap["duration"] as? String ?: ""
-                    )
-                }
-
-                val prescriptionSummary = PrescriptionSummary(
-                    doctorName = summaryMap["doctorName"] as? String ?: "Unknown Doctor",
-                    medications = medications,
-                    dosageInstructions = (summaryMap["dosageInstructions"] as? List<String>)
-                        ?: emptyList(),
-                    summary = summaryMap["summary"] as? String ?: "",
-                    warnings = (summaryMap["warnings"] as? List<String>) ?: emptyList(),
-                    prescriptionReason = summaryMap["prescriptionReason"] as? String
-                        ?: (data["prescriptionReason"] as? String ?: ""),
-                    stepsToCure = (summaryMap["stepsToCure"] as? List<String>)
-                        ?: (data["stepsToCure"] as? List<String> ?: emptyList())
-                )
-
-                val prescription = SavedPrescription(
-                    id = document.id,
-                    summary = prescriptionSummary,
-                    savedAt = (data["savedAt"] as? com.google.firebase.Timestamp)?.toDate()
-                        ?: java.util.Date(),
-                    title = data["title"] as? String ?: "Untitled Prescription",
-                    report = data["report"] as? String ?: ""
-                )
+                val prescription = parseSavedPrescription(document.id, data)
+                    ?: return@withContext Resource.Error("Invalid prescription data")
 
                 Resource.Success(prescription)
             } catch (e: Exception) {
@@ -480,5 +410,81 @@ class PrescriptionRepositoryImpl @Inject constructor(
         return instructions.ifEmpty {
             listOf("Follow the instructions on the prescription")
         }
+    }
+
+    private fun parseSavedPrescription(
+        documentId: String,
+        data: Map<String, Any>
+    ): SavedPrescription {
+        val summaryMap = data["summary"].asMapOrNull()
+        val medications = summaryMap?.getMedicationList("medications")
+            ?.takeIf { it.isNotEmpty() }
+            ?: data.getMedicationList("medications")
+        val dosageInstructions = summaryMap?.getStringList("dosageInstructions")
+            ?.takeIf { it.isNotEmpty() }
+            ?: data.getStringList("dosageInstructions")
+        val warnings = summaryMap?.getStringList("warnings")
+            ?.takeIf { it.isNotEmpty() }
+            ?: data.getStringList("warnings")
+        val stepsToCure = summaryMap?.getStringList("stepsToCure")
+            ?.takeIf { it.isNotEmpty() }
+            ?: data.getStringList("stepsToCure")
+        val report = summaryMap?.getString("report")
+            ?: data.getString("report")
+            ?: ""
+        val summaryText = summaryMap?.getString("summary")
+            ?: (data["summary"] as? String)
+            ?: ""
+        val doctorName = summaryMap?.getString("doctorName")
+            ?: data.getString("doctorName")
+            ?: "Unknown Doctor"
+        val prescriptionReason = summaryMap?.getString("prescriptionReason")
+            ?: data.getString("prescriptionReason")
+            ?: ""
+
+        val prescriptionSummary = PrescriptionSummary(
+            doctorName = doctorName,
+            medications = medications,
+            dosageInstructions = dosageInstructions,
+            summary = summaryText,
+            warnings = warnings,
+            prescriptionReason = prescriptionReason,
+            report = report,
+            stepsToCure = stepsToCure
+        )
+
+        return SavedPrescription(
+            id = documentId,
+            summary = prescriptionSummary,
+            savedAt = (data["savedAt"] as? com.google.firebase.Timestamp)?.toDate()
+                ?: java.util.Date(),
+            title = data.getString("title") ?: "Untitled Prescription",
+            report = report,
+            prescriptionReason = prescriptionReason,
+            stepsToCure = stepsToCure
+        )
+    }
+
+    private fun Any?.asMapOrNull(): Map<*, *>? = this as? Map<*, *>
+
+    private fun Map<*, *>.getString(key: String): String? =
+        (this[key] as? String)?.trim()?.takeIf { it.isNotEmpty() }
+
+    private fun Map<*, *>.getStringList(key: String): List<String> =
+        (this[key] as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+
+    private fun Map<*, *>.getMedicationList(key: String): List<Medication> =
+        (this[key] as? List<*>)?.mapNotNull { item ->
+            (item as? Map<*, *>)?.toMedicationOrNull()
+        } ?: emptyList()
+
+    private fun Map<*, *>.toMedicationOrNull(): Medication? {
+        val name = getString("name") ?: return null
+        return Medication(
+            name = name,
+            dosage = getString("dosage") ?: "",
+            frequency = getString("frequency") ?: "",
+            duration = getString("duration") ?: ""
+        )
     }
 }

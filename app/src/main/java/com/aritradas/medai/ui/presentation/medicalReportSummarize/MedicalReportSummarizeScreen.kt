@@ -60,7 +60,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,6 +83,8 @@ import coil.compose.AsyncImage
 import com.aritradas.medai.data.datastore.DataStoreUtil
 import com.aritradas.medai.ui.presentation.prescriptionSummarize.component.DrugDetailSheetContent
 import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
+import com.aritradas.medai.ui.presentation.subscription.SummaryUsageCard
+import com.aritradas.medai.ui.presentation.subscription.hasProEntitlement
 import com.aritradas.medai.utils.MixpanelManager
 import com.aritradas.medai.utils.UtilsKt.formatReportSummaryForSharing
 import com.revenuecat.purchases.Purchases
@@ -102,11 +103,9 @@ fun MedicalReportSummarizeScreen(
     hasCameraPermission: Boolean = false
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val dataStoreUtil = remember(context) { DataStoreUtil(context) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     val uiState by reportViewModel.uiState.collectAsState()
-    val freeSummaryUsageCount by dataStoreUtil.getSummaryUsageCount().collectAsState(initial = 0)
+    val freeSummaryUsageCount by reportViewModel.summaryUsageCount.collectAsState()
     val freeSummaryRemaining = (DataStoreUtil.FREE_SUMMARY_LIMIT - freeSummaryUsageCount).coerceAtLeast(0)
 
     var showReportDialog by remember { mutableStateOf(false) }
@@ -127,7 +126,7 @@ fun MedicalReportSummarizeScreen(
     LaunchedEffect(Unit) {
         Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
             override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
-                isProUser = customerInfo.entitlements.active.isNotEmpty()
+                isProUser = customerInfo.hasProEntitlement()
             }
 
             override fun onError(error: com.revenuecat.purchases.PurchasesError) {
@@ -199,9 +198,7 @@ fun MedicalReportSummarizeScreen(
             }
 
             if (!isProUser) {
-                scope.launch {
-                    dataStoreUtil.incrementSummaryUsageCount()
-                }
+                reportViewModel.incrementSummaryUsageCount()
             }
 
             reportViewModel.validateAndAnalyzeReport(uri)
@@ -292,7 +289,7 @@ fun MedicalReportSummarizeScreen(
     ProPaywallSheet(
         visible = showPaywallSheet,
         onDismiss = { showPaywallSheet = false },
-        onSubscribed = { isProUser = true }
+        onSubscriptionStatusChanged = { isProUser = it }
     )
 
     Scaffold(
@@ -385,6 +382,15 @@ fun MedicalReportSummarizeScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (!isProUser) {
+                Spacer(modifier = Modifier.height(16.dp))
+                SummaryUsageCard(
+                    remaining = freeSummaryRemaining,
+                    total = DataStoreUtil.FREE_SUMMARY_LIMIT,
+                    onUpgradeClick = { showPaywallSheet = true }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
             Box(
                 modifier = Modifier
@@ -523,15 +529,6 @@ fun MedicalReportSummarizeScreen(
                         Text("Summarize")
                     }
                 }
-            }
-
-            if (!isProUser) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Free summaries left: $freeSummaryRemaining/${DataStoreUtil.FREE_SUMMARY_LIMIT}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             uiState.summary?.let { summary ->

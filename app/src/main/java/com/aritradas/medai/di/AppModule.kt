@@ -13,12 +13,14 @@ import com.aritradas.medai.data.repository.FeatureRequestRepositoryImpl
 import com.aritradas.medai.data.repository.MedicalReportRepositoryImpl
 import com.aritradas.medai.data.repository.MedicineDetailsRepositoryImpl
 import com.aritradas.medai.data.repository.PrescriptionRepositoryImpl
+import com.aritradas.medai.data.repository.SummaryUsageRepositoryImpl
 import com.aritradas.medai.data.repository.ThemeRepositoryImpl
 import com.aritradas.medai.domain.repository.AuthRepository
 import com.aritradas.medai.domain.repository.FeatureRequestRepository
 import com.aritradas.medai.domain.repository.MedicalReportRepository
 import com.aritradas.medai.domain.repository.MedicineDetailsRepository
 import com.aritradas.medai.domain.repository.PrescriptionRepository
+import com.aritradas.medai.domain.repository.SummaryUsageRepository
 import com.aritradas.medai.network.GoogleSheetsService
 import com.aritradas.medai.network.RetrofitClient
 import com.aritradas.medai.domain.repository.ThemeRepository
@@ -91,6 +93,12 @@ object AppModule {
     fun provideFeatureRequestRepository(
         googleSheetsService: GoogleSheetsService
     ): FeatureRequestRepository = FeatureRequestRepositoryImpl(googleSheetsService)
+
+    @Provides
+    @Singleton
+    fun provideSummaryUsageRepository(
+        summaryUsageRepositoryImpl: SummaryUsageRepositoryImpl
+    ): SummaryUsageRepository = summaryUsageRepositoryImpl
 
     @Provides
     fun provideDataStoreUtil(@ApplicationContext context: Context): DataStoreUtil =

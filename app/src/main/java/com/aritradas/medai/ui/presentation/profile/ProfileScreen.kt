@@ -60,6 +60,7 @@ import com.aritradas.medai.R
 import com.aritradas.medai.navigation.Screens
 import com.aritradas.medai.ui.presentation.profile.components.SettingsCard
 import com.aritradas.medai.ui.presentation.subscription.ProPaywallSheet
+import com.aritradas.medai.ui.presentation.subscription.hasProEntitlement
 import com.aritradas.medai.utils.Constants
 import com.aritradas.medai.utils.Resource
 import com.aritradas.medai.utils.UtilsKt.getInitials
@@ -96,10 +97,12 @@ fun ProfileScreen(
     var featureName by remember { mutableStateOf("") }
     var featureEmail by remember { mutableStateOf("") }
     var featureDetail by remember { mutableStateOf("") }
+    val displayName = userData?.username?.takeIf { it.isNotBlank() } ?: ""
+    val profileInitials = getInitials(displayName)
 
     LaunchedEffect(showBottomSheet) {
         if (showBottomSheet && featureName.isBlank()) {
-            featureName = userData?.username ?: ""
+            featureName = userData?.username?.takeIf { it.isNotBlank() } ?: ""
         }
     }
 
@@ -127,7 +130,7 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         Purchases.sharedInstance.getCustomerInfo(object : ReceiveCustomerInfoCallback {
             override fun onReceived(customerInfo: com.revenuecat.purchases.CustomerInfo) {
-                isProUser = customerInfo.entitlements.active.isNotEmpty()
+                isProUser = customerInfo.hasProEntitlement()
             }
 
             override fun onError(error: com.revenuecat.purchases.PurchasesError) {
@@ -139,7 +142,7 @@ fun ProfileScreen(
     ProPaywallSheet(
         visible = showPaywall,
         onDismiss = { showPaywall = false },
-        onSubscribed = { isProUser = true }
+        onSubscriptionStatusChanged = { isProUser = it }
     )
 
     if (showBottomSheet) {
@@ -281,9 +284,8 @@ fun ProfileScreen(
                                 .background(color = MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            val initials = userData?.username?.let { getInitials(it) } ?: ""
                             Text(
-                                text = initials,
+                                text = profileInitials,
                                 style = MaterialTheme.typography.titleLarge
                             )
                         }
@@ -310,12 +312,10 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    userData?.username?.let { name ->
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
             }
 
