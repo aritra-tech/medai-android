@@ -48,6 +48,24 @@ android {
         )
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = project.rootProject.file("keystore.jks")
+            storeFile = if (keystoreFile.exists()) {
+                keystoreFile
+            } else {
+                // Fallback or check for env var path if needed, but usually we dump the secret to a file
+                // For CI, we will decode the secret to a file named 'keystore.jks' in the root or app dir
+                // Let's assume the CI step places it in the root project dir as keystore.jks
+                project.rootProject.file("keystore.jks")
+            }
+            
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as? String ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as? String ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as? String ?: ""
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -56,6 +74,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
