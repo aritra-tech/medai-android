@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.aritradas.medai.BuildConfig
 import com.aritradas.medai.R
 import com.aritradas.medai.data.datastore.DataStoreUtil
+import com.google.firebase.functions.FirebaseFunctions
 import com.aritradas.medai.data.repository.AuthRepositoryImpl
 import com.aritradas.medai.data.repository.FeatureRequestRepositoryImpl
 import com.aritradas.medai.data.repository.MedicalReportRepositoryImpl
@@ -38,6 +39,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+private const val FIREBASE_FUNCTIONS_REGION = "asia-south1"
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -45,6 +48,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = Firebase.auth
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFunctions(): FirebaseFunctions =
+        FirebaseFunctions.getInstance(FIREBASE_FUNCTIONS_REGION)
 
     @Provides
     @Singleton

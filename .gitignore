@@ -26,3 +26,10 @@ google-services.json
 *.apk
 *.aab
 /Untitled
+
+# Firebase CLI
+firebase-debug.log
+firebase-debug.*.log
+
+# Python
+*.pyc
